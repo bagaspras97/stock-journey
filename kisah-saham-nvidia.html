@@ -1,0 +1,2382 @@
+<meta charset="utf-8">
+<title>Stock Journey</title>
+<script>try{var sjt=localStorage.getItem("kisah-theme");document.documentElement.dataset.theme=sjt==="light"||sjt==="dark"?sjt:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch(e){}
+try{var sjl=sessionStorage.getItem("sj-label");if(sjl){sessionStorage.removeItem("sj-label");document.documentElement.classList.add("sj-veiled");document.addEventListener("DOMContentLoaded",function(){var d=document.createElement("div");d.className="sj-veil on";d.setAttribute("aria-hidden","true");d.innerHTML="<span>"+sjl.replace(/[<&]/g,"")+"</span>";document.documentElement.appendChild(d)})}if(sessionStorage.getItem("sj-fade")){sessionStorage.removeItem("sj-fade");document.documentElement.classList.add("sj-in");setTimeout(function(){document.documentElement.classList.add("sj-ready")},1500)}}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap">
+<style>
+/* Design system "Stock Journey": calm frosted dashboard (panels, pill controls, KPI cards with bar strips, hatched chart bands),
+   performance-coloured stock tiles, and story pacing with a soft colour aura, thin oversized era numerals and "next chapter" links.
+   Layout: home = header + KPI facts + comparison panel beside a "most dramatic chapters" panel + filterable tile grid.
+   Detail = header + KPI cards + sticky chart panel beside chapter cards + epilogue panels. */
+@property --au1{syntax:'<color>';inherits:true;initial-value:#f6b48a}
+@property --au2{syntax:'<color>';inherits:true;initial-value:#e8b4dc}
+:root{
+  color-scheme: light;
+  --bg:#eceeed; --panel:rgba(250,251,250,.72); --panel-solid:#f7f8f7; --panel-2:#f0f2f1; --line:#dde1df; --line-2:#e6e9e7;
+  --ink:#15181a; --ink-2:#555c61; --faint:#636b71; --on-dark:#ffffff;
+  --gain:#17794f; --loss:#c0392b; --flat:#4d5c86;
+  --t-big:#1f6b4a; --t-mid:#3a7d5f; --t-low:#646b72;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#4a3aa7;
+  --acc:var(--ink);
+  --au1:#f6b48a; --au2:#e8b4dc;
+  --shadow:0 1px 2px rgba(20,24,26,.04),0 8px 28px -14px rgba(20,24,26,.18);
+  --font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-story:"Newsreader",Georgia,"Times New Roman",serif;
+  /* type scale: one step per job, nothing in between */
+  --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-15:15px; --fs-16:16px; --fs-18:18px; --fs-20:20px; --fs-24:24px; --fs-28:28px; --fs-36:36px; --fs-44:44px;
+  --fs-display:clamp(42px,6vw,80px); --fs-h1:clamp(34px,4.2vw,52px); --fs-num:clamp(30px,3vw,42px);
+  --lh-tight:1.1; --lh-snug:1.3; --lh-body:1.55; --lh-read:1.65;
+  --ls-tight:-.025em; --ls-snug:-.015em;
+  --out:cubic-bezier(.2,.8,.2,1); --in:cubic-bezier(.4,0,1,1);
+  --r-lg:22px; --r-md:16px; --r-sm:12px;
+  --top:calc(84px + env(safe-area-inset-top,0px));
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme: dark;
+  --bg:#12151a; --panel:rgba(30,34,41,.72); --panel-solid:#1c2027; --panel-2:#22272f; --line:#2c323b; --line-2:#262b33;
+  --ink:#eef0f2; --ink-2:#a9b0b8; --faint:#8a929b;
+  --gain:#4cc38a; --loss:#f2786a; --flat:#9fb0d6;
+  --t-big:#1d5a40; --t-mid:#2f6a52; --t-low:#4a5058;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#9085e9;
+  --shadow:0 1px 2px rgba(0,0,0,.25),0 10px 30px -14px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#12151a; --panel:rgba(30,34,41,.72); --panel-solid:#1c2027; --panel-2:#22272f; --line:#2c323b; --line-2:#262b33;
+  --ink:#eef0f2; --ink-2:#a9b0b8; --faint:#8a929b;
+  --gain:#4cc38a; --loss:#f2786a; --flat:#9fb0d6;
+  --t-big:#1d5a40; --t-mid:#2f6a52; --t-low:#4a5058;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#9085e9;
+  --shadow:0 1px 2px rgba(0,0,0,.25),0 10px 30px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+/* anchor targets land just below the floating navbar */
+#saham,#banding,#epilog,#story,#tiles,#homeKpis{scroll-margin-top:calc(var(--top) + 12px)}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+/* market and language switches reload the page: fade out, then fade the new page in once it has rendered */
+html.sj-out body{opacity:0;transition:opacity .12s ease-in}
+html.sj-in body{opacity:0}
+html.sj-quiet *,html.sj-quiet *::before,html.sj-quiet *::after{animation:none!important;transition:none!important}
+html.sj-in.sj-ready body{opacity:1;transition:opacity .25s var(--out)}
+/* when the market name is showing, the page waits until the name has faded out */
+html.sj-in.sj-ready.sj-veiled body{transition-delay:.38s}
+/* market switch: the market name shows briefly over the fade */
+.sj-veil{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;pointer-events:none;opacity:0;transition:opacity .16s var(--out)}
+.sj-veil span{font:400 clamp(30px,5vw,52px)/1.1 var(--font-story);letter-spacing:var(--ls-tight);color:var(--ink);transform:translateY(8px);transition:transform .3s var(--out)}
+.sj-veil.on{opacity:1}.sj-veil.on span{transform:none}
+html.sj-ready .sj-veil{opacity:0;transition:opacity .25s ease .13s}
+html.sj-ready .sj-veil span{transform:translateY(-6px);transition:transform .35s var(--out) .13s}
+/* theme switch: the new theme grows as a circle from the button */
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+html.vt-theme .top{view-transition-name:none}
+html.vt-theme::view-transition-old(root){animation:none!important}
+html.vt-theme::view-transition-new(root){animation:themeReveal .4s cubic-bezier(.3,.1,.3,1) both!important}
+@keyframes themeReveal{from{clip-path:circle(0 at var(--tx,50%) var(--ty,0))}to{clip-path:circle(var(--tr,150%) at var(--tx,50%) var(--ty,0))}}
+html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:background-color .25s,color .25s,border-color .25s,fill .25s,stroke .25s!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--fs-16)/var(--lh-body) var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:8px}
+.num{font-variant-numeric:tabular-nums}
+.c-bull{color:var(--gain)}.c-bear{color:var(--loss)}.c-flat{color:var(--flat)}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:24px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* aura: soft colour light at the bottom of the page, tinted by context */
+.aura{position:fixed;inset:auto 0 0 0;height:70vh;pointer-events:none;z-index:0;transition:--au1 1.2s var(--out),--au2 1.2s var(--out);
+  background:radial-gradient(45% 60% at 4% 100%,color-mix(in srgb,var(--au1) 55%,transparent),transparent 70%),radial-gradient(40% 55% at 96% 100%,color-mix(in srgb,var(--au2) 50%,transparent),transparent 70%);opacity:.75}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .aura{opacity:.35} }
+:root[data-theme="dark"] .aura{opacity:.35}
+main,footer{position:relative;z-index:1}
+
+/* primitives */
+.panel{background:var(--panel);border:1px solid color-mix(in srgb,var(--panel-solid) 70%,transparent);border-radius:var(--r-lg);box-shadow:var(--shadow);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 20px 8px}
+.panel-head h2,.panel-head h3{margin:0;font:500 var(--fs-20)/var(--lh-snug) var(--font);letter-spacing:var(--ls-snug)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:14px;padding:10px 18px;font:500 var(--fs-15)/1 var(--font);cursor:pointer;border:1px solid var(--line);background:var(--panel-solid);text-decoration:none;transition:border-color .18s var(--out),background-color .18s var(--out),transform .12s var(--out)}
+.btn:hover{border-color:var(--ink)}
+.tmore{display:flex;justify-content:center;margin-top:20px}.tmore:has(> [hidden]){display:none}
+.btn:active{transform:scale(.97)}
+.btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn svg{width:18px;height:18px}
+.seg{display:inline-flex;gap:4px;border-radius:14px;padding:4px;background:var(--panel-2)}
+.seg button{border:0;background:transparent;border-radius:10px;min-height:36px;padding:6px 14px;font:500 var(--fs-14) var(--font);color:var(--ink-2);cursor:pointer;transition:background-color .18s var(--out),color .18s var(--out)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel-solid);border-radius:999px;min-height:36px;padding:4px 14px;font:500 var(--fs-14) var(--font);cursor:pointer;white-space:nowrap;transition:border-color .18s var(--out),background-color .18s var(--out),opacity .18s var(--out)}
+.pill:hover{border-color:var(--ink)}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pill .n{opacity:.6}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--panel-solid);cursor:pointer;display:grid;place-items:center;transition:border-color .18s var(--out),transform .12s var(--out)}
+.iconbtn:hover{border-color:var(--ink)}
+.iconbtn:active{transform:scale(.95)}
+.iconbtn svg{width:20px;height:20px}
+#themeBtn .moon{display:none}
+:root[data-theme="light"] #themeBtn .sun{display:none}
+:root[data-theme="light"] #themeBtn .moon{display:block}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font:600 var(--fs-13) var(--font)}
+.tag.bull{background:color-mix(in srgb,var(--gain) 14%,transparent);color:var(--gain)}
+.tag.bear{background:color-mix(in srgb,var(--loss) 14%,transparent);color:var(--loss)}
+.tag.flat{background:color-mix(in srgb,var(--flat) 14%,transparent);color:var(--flat)}
+.tag i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.mono svg{width:58%;height:58%;fill:currentColor;display:block}
+.mono{--b:var(--ink);flex:none;width:40px;height:40px;border-radius:50%;background:#fff;color:var(--b);display:grid;place-items:center;font:600 var(--fs-18)/1 var(--font);box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.mono.lgd{position:relative;overflow:hidden}
+.mono.lgd img{position:absolute;left:6%;top:6%;width:88%;height:88%;object-fit:contain;opacity:0;transition:opacity .2s var(--out)}
+.mono.lgd.fill img{left:0;top:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.mono.lgd.ok img{opacity:1}
+.mono.lgd.ok .ini{visibility:hidden}
+.mono .m3{font-size:.6em;letter-spacing:var(--ls-snug)}
+.mono.lg{width:56px;height:56px;font-size:var(--fs-24)}
+.label{font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+.note{font:400 var(--fs-14)/var(--lh-body) var(--font);color:var(--faint);margin:8px 0 0}
+
+/* top bar */
+/* floating pill navbar */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;padding:calc(env(safe-area-inset-top,0px) + 16px) 24px 0;pointer-events:none;view-transition-name:topbar}
+.top-in{pointer-events:auto;position:relative;max-width:1232px;margin:0 auto;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:0 8px 0 20px;border-radius:18px;background:color-mix(in srgb,var(--panel-solid) 94%,transparent);border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);overflow:hidden}
+.brand{justify-self:start;display:flex;align-items:center;gap:14px;min-width:0}
+.msw{padding:3px;border-radius:12px}
+.msw button{min-height:32px;padding:4px 12px;border-radius:9px;font-size:var(--fs-14)}
+.msw .s{display:none}
+.msw button{white-space:nowrap}
+@media (max-width:1180px){ .msw .l{display:none} .msw .s{display:inline} }
+.is-detail .msw{display:none}
+.menu .sheet-body{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.mlinks{display:grid;gap:4px;padding:4px 0 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.mlinks a,.mlinks button{display:flex;align-items:center;gap:14px;min-height:50px;padding:0 12px;border:0;border-radius:var(--r-sm);background:none;color:var(--ink);text-decoration:none;font:500 var(--fs-16) var(--font);text-align:left;cursor:pointer}
+.mlinks a:active,.mlinks button:active{background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.mlinks svg{width:20px;height:20px;color:var(--ink-2);flex:none}
+.mset{display:grid;gap:16px}
+#menuBtn{display:none}
+.is-loading,.is-loading *{cursor:progress}
+.lang{font:600 var(--fs-13) var(--font);letter-spacing:.02em;color:var(--ink)}
+.logo{display:flex;align-items:center;font:600 var(--fs-18) var(--font);text-decoration:none;white-space:nowrap;min-height:44px;letter-spacing:var(--ls-snug)}
+.navlinks{display:flex;align-items:center;gap:4px;min-width:0}
+.navlinks a{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border-radius:12px;text-decoration:none;font:500 var(--fs-15) var(--font);color:var(--ink-2);transition:background-color .18s var(--out),color .18s var(--out)}
+.navlinks a:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.navlinks a[aria-current="true"]{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.back-l svg{display:none;width:20px;height:20px}
+.crumbs .sep{color:var(--faint);padding:0 2px}
+.crumbs .here{display:inline-flex;align-items:center;gap:8px;padding:4px 8px;font:600 var(--fs-15) var(--font);min-width:0}
+.crumbs .here b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumbs .mono{width:28px;height:28px;font-size:var(--fs-13)}
+.top-act{justify-self:end;display:flex;gap:4px;align-items:center}
+.iconbtn.ghost{border-color:transparent;background:transparent;width:40px;height:40px;border-radius:12px}
+.iconbtn.ghost:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);border-color:transparent}
+.play{display:inline-flex;align-items:center;gap:8px;min-height:40px;border:0;background:var(--ink);color:var(--bg);border-radius:12px;padding:6px 14px;margin-right:4px;font:500 var(--fs-14) var(--font);cursor:pointer;white-space:nowrap;position:relative;overflow:hidden}
+.play:hover{opacity:.9}
+.play .meter{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--bg);opacity:.7;transform:scaleX(0);transform-origin:left}
+.play.running .meter{animation:meter var(--dur,8s) linear forwards}
+@keyframes meter{to{transform:scaleX(1)}}
+.progress{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform:scaleX(0);transform-origin:left}
+
+::view-transition-old(root){animation:vtOut .2s var(--in) both}
+::view-transition-new(root){animation:vtIn .36s var(--out) both}
+::view-transition-group(stock-mono){animation-duration:.42s;animation-timing-function:var(--out)}
+@keyframes vtOut{to{opacity:0;transform:translateY(-6px);filter:blur(3px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}}
+@keyframes vtIn{from{opacity:0;transform:translateY(10px);filter:blur(4px)}}
+.enter{animation:vtIn .36s var(--out) both}
+
+/* page headers */
+/* home hero: full-bleed illustration behind centred text, fading into the page; the analytics panel overlaps its lower edge */
+.hero{position:relative;padding-top:calc(var(--top) + 64px);padding-bottom:210px;text-align:center;isolation:isolate}
+.hero-bg{position:absolute;inset:0;z-index:-1;background:url("hero.webp") center 78%/cover no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 72%,transparent);mask-image:linear-gradient(180deg,#000 72%,transparent)}
+.hero-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 55% at 50% 30%,color-mix(in srgb,var(--bg) 55%,transparent),transparent 75%)}
+.h-text{max-width:760px;margin:0 auto}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .hero-bg{filter:brightness(.42) saturate(1.15)} }
+:root[data-theme="dark"] .hero-bg{filter:brightness(.42) saturate(1.15)}
+.hero h1{margin:0;font:500 var(--fs-display)/1.02 var(--font-story);letter-spacing:var(--ls-snug);text-wrap:balance;font-optical-sizing:auto}
+.hero .lead{margin:14px auto 22px;max-width:56ch;color:var(--ink-2);font-size:var(--fs-18)}
+.hero .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* the analytics panel rides up over the bottom edge of the hero image */
+.kpi-lift{position:relative;z-index:2;margin-top:-96px;padding-inline:64px}
+.phead{padding-top:calc(var(--top) + 22px);padding-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.phead h1{margin:0;font:500 var(--fs-h1)/1.08 var(--font-story);letter-spacing:var(--ls-snug);text-wrap:balance}
+.phead .lead{margin:10px 0 0;max-width:60ch;color:var(--ink-2);font-size:var(--fs-16)}
+.phead .acts{display:flex;gap:10px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 14px 6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel-solid);font:500 var(--fs-14) var(--font);color:var(--ink-2);text-decoration:none;margin-bottom:16px;transition:border-color .18s var(--out),color .18s var(--out)}
+.back:hover{color:var(--ink);border-color:var(--ink)}
+.idrow{display:flex;align-items:center;gap:14px}
+.idrow .mono{view-transition-name:stock-mono}
+.idrow .meta{font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:6px 0}
+.kpi{position:relative;display:flex;flex-direction:column;gap:2px;padding:16px 20px 14px;border-left:1px solid var(--line);text-decoration:none;min-width:0;border-radius:var(--r-md);transition:background-color .18s var(--out)}
+.kpi:first-child{border-left:0}
+a.kpi:hover{background:color-mix(in srgb,var(--panel-solid) 60%,transparent)}
+.kpi .v{font:300 var(--fs-num)/1.05 var(--font);letter-spacing:var(--ls-tight);font-variant-numeric:tabular-nums}
+.kpi .k{font:500 var(--fs-15)/var(--lh-snug) var(--font);color:var(--ink-2)}
+.kpi .s{font:400 var(--fs-13)/var(--lh-snug) var(--font);color:var(--faint);min-height:1.35em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .ic{position:absolute;top:14px;right:16px}
+.bars{display:block;width:100%;height:34px;margin-top:10px}
+.bars rect{fill:var(--line)}
+.bars rect.on{fill:var(--ink)}
+
+/* home: comparison + dramatic chapters */
+.homegrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:20px;padding-block:36px 20px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 6px}
+.chips .pill.sel{padding-right:6px}
+.chips .pill.sel .x{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;color:var(--ink-2)}
+.chips .pill.sel:hover .x{background:var(--line);color:var(--ink)}
+.chips .pill.sel .x svg{width:12px;height:12px}
+.chips .pill.add{border-style:dashed;color:var(--ink-2)}
+.chips .pill.add:hover{color:var(--ink);border-color:var(--ink)}
+.chips .pill.add svg{width:14px;height:14px}
+dialog.pick .sheet-body{padding-top:8px}
+.psearch{position:relative;margin-bottom:14px}
+.psearch svg{position:absolute;left:12px;top:50%;width:16px;height:16px;margin-top:-8px;color:var(--faint);pointer-events:none}
+.psearch input{width:100%;min-height:44px;padding:8px 12px 8px 36px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:500 var(--fs-15) var(--font)}
+.psearch input:focus{outline:2px solid var(--ink);outline-offset:1px}
+.pgroup{margin-bottom:14px}
+.pgroup h3{margin:0 0 8px;font:600 var(--fs-13) var(--font);color:var(--ink-2)}
+.ppills{display:flex;flex-wrap:wrap;gap:6px}
+.ppills .pill{min-height:36px;padding:4px 12px;font-size:var(--fs-14)}
+.ppills .pill i{width:8px;height:8px;border-radius:50%;display:block;background:var(--line)}
+.ppills .pill[aria-pressed="true"]{background:var(--panel-solid);color:var(--ink);border-color:var(--ink)}
+.ppills .pill .nm{color:var(--ink-2);font-weight:400}
+.ppills .pill[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
+.pempty{color:var(--ink-2);font-size:var(--fs-14)}
+.pcount{align-self:center;color:var(--ink-2);font-size:var(--fs-14)}
+dialog.pick .sheet-foot{grid-template-columns:1fr auto}
+@media (min-width:768px){
+  dialog.sheet.pick{margin:auto;width:min(640px,calc(100% - 48px));max-height:min(78vh,720px);border-radius:22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.45)}
+  dialog.sheet.pick[open]{animation:pickIn .22s var(--out)}
+  dialog.sheet.pick .sheet-head::before{display:none}
+}
+@keyframes pickIn{from{transform:translateY(12px) scale(.98);opacity:0}}
+.chips .pill{min-height:32px;padding:3px 11px;font-size:var(--fs-13)}
+.chips .pill i{width:8px;height:8px;border-radius:50%;display:block;background:var(--line)}
+.chips .pill[aria-pressed="true"]{background:var(--panel-solid);color:var(--ink);border-color:var(--ink)}
+.cmp-box{position:relative;height:clamp(300px,44vh,420px);margin:0 8px}
+.cmp-box svg,.ex-box svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
+.cl{fill:none;stroke-width:2.2;stroke-linejoin:round}
+.cl.ctx{stroke:var(--line);stroke-width:1;opacity:.6}
+.cl.draw{stroke-dasharray:1;animation:clDraw 1.4s var(--out) both}
+@keyframes clDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.endlab{font:600 var(--fs-13) var(--font);fill:var(--ink)}
+.endlab tspan.v{fill:var(--ink-2);font-weight:500}
+.ax{fill:var(--faint);font:500 var(--fs-12) var(--font);font-variant-numeric:tabular-nums}
+.grid line{stroke:var(--line);stroke-width:1;stroke-dasharray:3 5}
+.mkt rect{fill:url(#hatch)}
+.mkt text{fill:var(--faint);font:500 var(--fs-12) var(--font)}
+.cross{stroke:var(--ink-2);stroke-dasharray:2 3}
+.tip{position:absolute;pointer-events:none;background:color-mix(in srgb,var(--panel-solid) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:500 var(--fs-13)/var(--lh-body) var(--font);min-width:150px;max-width:240px;opacity:0;transition:opacity .12s var(--out);z-index:3;font-variant-numeric:tabular-nums;box-shadow:var(--shadow)}
+.tip b{font:400 var(--fs-24)/var(--lh-tight) var(--font);letter-spacing:var(--ls-snug);display:block}
+.tip .row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.tip .row span{display:flex;align-items:center;gap:6px}
+.tip .row i{width:8px;height:8px;border-radius:50%;display:block}
+.tip .sub{color:var(--ink-2)}
+.cmp .foot{padding:4px 20px 16px}
+.drama{display:flex;flex-direction:column}
+.drama ol{list-style:none;margin:0;padding:4px 10px 12px;display:grid;gap:6px}
+.drama li a{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border-radius:var(--r-md);text-decoration:none;background:color-mix(in srgb,var(--panel-solid) 55%,transparent);transition:background-color .18s var(--out)}
+.drama li a:hover{background:var(--panel-solid)}
+.drama .t{display:block;font:600 var(--fs-15)/var(--lh-snug) var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drama .e{display:block;font:400 var(--fs-13)/var(--lh-snug) var(--font);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drama .p{font:500 var(--fs-16) var(--font);font-variant-numeric:tabular-nums}
+.drama .panel-head{padding-bottom:12px}
+
+/* stock tiles */
+.sechead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:22px 0 12px}
+.sechead h2{margin:0;font:500 var(--fs-28)/var(--lh-tight) var(--font-story);letter-spacing:var(--ls-snug)}
+.sechead p{margin:4px 0 0;color:var(--ink-2);font-size:var(--fs-15)}
+.filters{display:grid;gap:12px;padding:16px 18px}
+.frow{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;min-width:0}
+.search{flex:1 1 280px;display:flex;align-items:center;gap:10px;min-height:46px;border:1px solid var(--line);border-radius:14px;background:var(--panel-solid);padding:0 14px;color:var(--ink-2);transition:border-color .18s var(--out)}
+.search:focus-within{border-color:var(--ink)}
+.search svg{width:18px;height:18px;flex:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:500 var(--fs-16) var(--font);color:var(--ink);outline:none;min-height:44px}
+.search input::placeholder{color:var(--faint)}
+.search kbd{font:600 var(--fs-12) var(--font);border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--faint)}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.frow > .label{min-width:120px}
+.fstatus{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font:500 var(--fs-13) var(--font);color:var(--ink-2)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-2px}
+.fbtn{display:none;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel-solid);font:500 var(--fs-15) var(--font);cursor:pointer;flex:none}
+.fbtn svg{width:18px;height:18px}
+.fbtn .badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ink);color:var(--bg);font:600 var(--fs-12)/20px var(--font);text-align:center}
+.fadv{display:grid;gap:12px}
+.achips{display:none;flex-wrap:wrap;gap:6px}
+.achip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:3px 8px 3px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel-solid);font:500 var(--fs-13) var(--font);cursor:pointer}
+.achip svg{width:14px;height:14px}
+dialog.sheet{border:0;padding:0;margin:auto 0 0;width:100%;max-width:100%;max-height:86vh;border-radius:22px 22px 0 0;background:var(--panel-solid);color:var(--ink);box-shadow:0 -20px 50px -20px rgba(0,0,0,.4);display:none;flex-direction:column}
+dialog.sheet[open]{display:flex;animation:sheetUp .28s var(--out)}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.4}}
+dialog.sheet::backdrop{background:rgba(12,14,16,.4)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:14px 14px 8px 20px}
+.sheet-head h2{margin:0;font:600 var(--fs-18) var(--font)}
+.sheet-head::before{content:"";position:absolute;left:50%;top:7px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--line)}
+.sheet-body{overflow-y:auto;padding:4px 20px 12px}
+.sheet-body .fadv{gap:18px}
+.sheet-body .frow{flex-direction:column;align-items:stretch;gap:8px}
+.sheet-body .frow > .label{width:auto;min-width:0;font-weight:600;color:var(--ink)}
+.sheet-body .chiprow{flex-wrap:wrap!important;overflow:visible!important;margin:0!important;padding:0!important}
+.sheet-body .chiprow .pill{min-height:40px;padding:6px 14px}
+.sheet-body .seg{display:grid!important;grid-auto-flow:column;grid-auto-columns:1fr}
+.sheet-body .seg button{min-height:42px}
+.sheet-body #fGrowth{grid-auto-flow:row;grid-template-columns:1fr 1fr}
+.sheet-foot{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.linkbtn{border:0;background:none;padding:6px 2px;min-height:32px;font:600 var(--fs-14) var(--font);color:var(--ink);text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}
+.tile{--sc:var(--ink);position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-rows:auto 1fr auto;gap:14px;min-width:0;padding:18px 16px 14px;border-radius:var(--r-md);background:var(--panel-solid);border:1px solid var(--line);color:var(--ink);text-decoration:none;transition:border-color .18s var(--out),transform .12s var(--out)}
+.tile::before{content:'';position:absolute;top:0;left:16px;width:36px;height:3px;border-radius:0 0 3px 3px;background:var(--sc)}
+.tile:hover{border-color:color-mix(in srgb,var(--ink) 28%,transparent)}
+.tile:active{transform:scale(.985)}
+.tile .hd{display:flex;align-items:center;gap:10px;min-width:0}
+.tile .mono{width:36px;height:36px;font-size:var(--fs-15)}
+.tile .id{min-width:0}
+.tile .nm{display:block;font:600 var(--fs-15)/var(--lh-snug) var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .sub{display:block;font:500 var(--fs-13)/var(--lh-snug) var(--font);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .mid{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.tile .m{display:block;font:500 var(--fs-28)/1 var(--font);letter-spacing:var(--ls-snug);font-variant-numeric:tabular-nums}
+.tile .ml{display:block;margin-top:5px;font:500 var(--fs-13) var(--font);color:var(--faint);white-space:nowrap}
+.tile .sp{flex:1 1 auto;max-width:130px;height:40px;overflow:visible}
+.tile .sp path{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-linejoin:round}
+.tile dl{margin:0;display:grid;gap:5px;padding-top:10px;border-top:1px solid var(--line-2)}
+.tile dl div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-13)/var(--lh-snug) var(--font)}
+.tile dt{color:var(--ink-2)}
+.tile dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .up{color:var(--gain)}.tile .dn{color:var(--loss)}
+.empty{grid-column:1/-1;grid-row:span 2;display:grid;place-items:center;align-content:center;gap:12px;color:var(--ink-2);text-align:center;padding:20px}
+
+/* ---------- detail ---------- */
+.dhead{padding-top:calc(var(--top) + 12px);padding-bottom:12px}
+.dhead .row1{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.dhead h1{margin:0;font:500 var(--fs-h1)/1.08 var(--font-story);letter-spacing:var(--ls-snug)}
+.dhead .lead{margin:12px 0 0;max-width:62ch;color:var(--ink-2);font:400 var(--fs-18)/var(--lh-read) var(--font-story)}
+.split{font:400 var(--fs-13)/var(--lh-body) var(--font);color:var(--faint);margin:6px 0 0}
+.story{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:22px;padding-top:14px}
+.stage{position:sticky;top:calc(var(--top) + 8px);height:calc(100vh - var(--top) - 24px);height:calc(100dvh - var(--top) - 24px);display:flex;flex-direction:column;padding:16px 18px 14px;gap:10px}
+.st-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.st-head .c{font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+.st-head .t{font:500 var(--fs-20)/var(--lh-snug) var(--font-story);margin-top:2px}
+.st-price{text-align:right;flex:none}
+.st-price b{display:block;font:300 var(--fs-36)/1 var(--font);letter-spacing:var(--ls-tight);font-variant-numeric:tabular-nums}
+.st-price .tag{margin-top:6px}
+.chart-box{position:relative;flex:1;min-height:0;border-radius:var(--r-md);background:color-mix(in srgb,var(--panel-solid) 60%,transparent);overflow:hidden}
+.chart-box svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.float{position:absolute;left:0;top:0;z-index:2;pointer-events:none;background:color-mix(in srgb,var(--panel-solid) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:var(--shadow);transition:opacity .2s var(--out);white-space:nowrap}
+.float b{display:block;font:400 var(--fs-24)/var(--lh-tight) var(--font);letter-spacing:var(--ls-snug);font-variant-numeric:tabular-nums}
+.float span{font:500 var(--fs-12) var(--font);color:var(--ink-2)}
+.pline{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.hl.bull{fill:url(#hatch-bull)}.hl.bear{fill:url(#hatch-bear)}.hl.flat{fill:url(#hatch-flat)}
+.hledge{stroke-width:1.5}
+.hledge.bull{stroke:var(--gain)}.hledge.bear{stroke:var(--loss)}.hledge.flat{stroke:var(--flat)}
+.mk circle{fill:var(--panel-solid);stroke:var(--ink);stroke-width:2}
+.mk line{stroke:var(--ink-2);stroke-dasharray:2 3}
+.mk rect{fill:var(--panel-solid);stroke:var(--line)}
+.mk text{fill:var(--ink);font:500 var(--fs-12) var(--font)}
+.end circle.o{fill:var(--acc);opacity:.18}
+.end circle.i{fill:var(--acc);stroke:var(--panel-solid);stroke-width:2}
+.band{cursor:pointer}
+.band rect.f{opacity:.12;transition:opacity .15s var(--out)}
+.band:hover rect.f{opacity:.26}
+.band.bull rect{fill:var(--gain)}.band.bear rect{fill:var(--loss)}.band.flat rect{fill:var(--flat)}
+.st-foot{display:flex;align-items:center;gap:10px}
+.strip{flex:1;display:flex;align-items:center;gap:3px;min-width:0;height:32px}
+.strip span{flex:var(--w,1);min-width:4px;height:32px;display:flex;align-items:center}
+.strip i{display:block;width:100%;height:6px;border-radius:3px;opacity:.3;transition:opacity .2s var(--out),height .2s var(--out)}
+.strip .bull i{background:var(--gain)}.strip .bear i{background:var(--loss)}.strip .flat i{background:var(--flat)}
+.strip .seen i{opacity:.65}.strip .on i{opacity:1;height:12px}
+.tocbtn{min-height:44px;border:1px solid var(--line);background:var(--panel-solid);border-radius:14px;padding:6px 14px;font:500 var(--fs-14) var(--font);cursor:pointer;white-space:nowrap}
+.tocbtn:hover{border-color:var(--ink)}
+
+.steps{padding-block:12vh 40vh;min-width:0}
+.step{min-height:86vh;display:flex;align-items:center}
+.card{padding:22px 22px 16px;opacity:.6;transform:translateY(8px);transition:opacity .45s var(--out),transform .45s var(--out)}
+.step.on .card{opacity:1;transform:none}
+.card .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+.card h2{margin:14px 0 8px;font:500 var(--fs-28)/var(--lh-tight) var(--font-story);letter-spacing:var(--ls-snug);text-wrap:balance}
+.move{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font:500 var(--fs-14) var(--font);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.move b{font:400 var(--fs-28)/1 var(--font);letter-spacing:var(--ls-snug)}
+.card p{margin:14px 0;font:400 var(--fs-18)/var(--lh-read) var(--font-story)}
+.card h3{margin:0 0 6px;font:600 var(--fs-14) var(--font);color:var(--ink-2)}
+.card ul{margin:0;padding:0 0 0 18px;display:grid;gap:4px}
+.card li{font-size:var(--fs-15);line-height:var(--lh-body)}
+.card.bull li::marker{color:var(--gain)}.card.bear li::marker{color:var(--loss)}.card.flat li::marker{color:var(--flat)}
+.nextch{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-top:16px;padding:12px 0 0;border:0;border-top:1px solid var(--line);background:none;cursor:pointer;text-align:left}
+.nextch small{display:block;font:500 var(--fs-13) var(--font);color:var(--faint)}
+.nextch span{display:block;font:500 var(--fs-15)/var(--lh-snug) var(--font)}
+.nextch .arr{flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2);transition:color .18s var(--out),border-color .18s var(--out)}
+.nextch .arr svg{width:18px;height:18px}
+.nextch:hover .arr{color:var(--ink);border-color:var(--ink)}
+
+dialog.toc{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--panel-solid);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:min(80vh,720px);box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
+dialog.toc[open]{animation:dlgIn .24s var(--out)}
+@keyframes dlgIn{from{opacity:0;transform:translateY(8px) scale(.98);filter:blur(3px)}}
+dialog.toc::backdrop{background:rgba(12,14,16,.4)}
+.toc-head{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 14px 12px 20px;border-bottom:1px solid var(--line);background:var(--panel-solid)}
+.toc-head h2{margin:0;font:600 var(--fs-18) var(--font)}
+.toc ol{list-style:none;margin:0;padding:6px 8px 10px}
+.toc li button{width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;text-align:left;border:0;background:none;border-radius:12px;padding:10px 12px;cursor:pointer;min-height:48px}
+.toc li button:hover,.toc li button[aria-current="true"]{background:var(--panel-2)}
+.toc .n{font:500 var(--fs-13) var(--font);color:var(--faint);font-variant-numeric:tabular-nums}
+.toc .t{display:block;font:600 var(--fs-15)/var(--lh-snug) var(--font)}
+.toc .e{display:block;font:400 var(--fs-13)/var(--lh-snug) var(--font);color:var(--ink-2)}
+.toc .p{font:500 var(--fs-15) var(--font);font-variant-numeric:tabular-nums}
+
+.epi{padding-block:10px 30px}
+.ex-box{position:relative;height:clamp(280px,44vh,440px);margin:0 8px}
+details.data{margin:6px 20px 16px;border-top:1px solid var(--line);padding-top:8px}
+details.data summary{cursor:pointer;font:500 var(--fs-15) var(--font);min-height:36px;display:flex;align-items:center}
+.tbl{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font:400 var(--fs-14) var(--font);font-variant-numeric:tabular-nums;margin-top:6px}
+.dt th{text-align:left;font-weight:500;color:var(--ink-2);padding:6px 10px 6px 0;border-bottom:1px solid var(--line)}
+.dt td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line-2)}
+.dt .r{text-align:right}
+.duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:18px}
+.box{padding-bottom:18px}
+.box .sub{margin:0;padding:0 20px 14px;color:var(--ink-2);font-size:var(--fs-15)}
+.field{display:grid;gap:6px;margin:0 20px 14px}
+.field label{font:500 var(--fs-14) var(--font);color:var(--ink-2);display:flex;justify-content:space-between}
+.field label output{color:var(--ink);font-weight:600}
+.field input[type=number],.field input[type=text]{background:var(--panel-solid);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;font:500 var(--fs-16) var(--font);width:100%}
+input[type=range]{width:100%;min-height:32px;accent-color:var(--ink)}
+.result{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 20px;border-top:1px solid var(--line)}
+.result div{padding:12px 10px 0 0;min-width:0}
+.result b{display:block;font:300 var(--fs-24)/var(--lh-tight) var(--font);letter-spacing:var(--ls-snug);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.result span{font:500 var(--fs-13) var(--font);color:var(--ink-2)}
+.result .big{grid-column:1/-1;padding-bottom:10px;border-bottom:1px solid var(--line-2)}
+.result.risk{grid-template-columns:repeat(2,minmax(0,1fr));border-top:0}
+.result.risk b{font-size:var(--fs-20)}
+.cpath{margin:14px 20px 0}
+.cpath svg{width:100%;height:132px;display:block;overflow:visible;touch-action:pan-y;cursor:crosshair}
+.cpath .base{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 4;opacity:.45}
+.cpath .val{fill:none;stroke-width:2;stroke-linejoin:round}
+.cpath .area{opacity:.12}
+.cpath .dd{fill:none;stroke:var(--loss);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.cpath .ax{font:500 var(--fs-12) var(--font);fill:var(--faint)}
+.cpath .hl{stroke:var(--ink);stroke-width:1;opacity:.5}
+.cpath-cap{margin:6px 0 0;min-height:1.4em;font:500 var(--fs-13) var(--font);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.cpath-cap b{color:var(--ink);font-weight:600}
+.result .big b{font-size:var(--fs-44);font-weight:300}
+.fxnote{margin:12px 20px 0;font:400 var(--fs-14)/var(--lh-body) var(--font);color:var(--ink-2)}
+.fxnote b{font-weight:600;color:var(--ink)}
+.fxnote:empty{display:none}
+.ddl{list-style:none;margin:0;padding:0 12px;display:grid;gap:6px}
+.ddl li button{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:12px;padding:8px;border:0;border-radius:var(--r-md);background:color-mix(in srgb,var(--panel-solid) 55%,transparent);cursor:pointer;text-align:left;transition:background-color .18s var(--out)}
+.ddl li button:hover{background:var(--panel-solid)}
+.ddl svg{width:52px;height:32px}
+.ddl .arc-bg{fill:none;stroke:var(--line);stroke-width:5;stroke-linecap:round}
+.ddl .arc{fill:none;stroke:var(--loss);stroke-width:5;stroke-linecap:round}
+.ddl .t{display:block;font:600 var(--fs-15)/var(--lh-snug) var(--font)}
+.ddl .e{display:block;font:400 var(--fs-13)/var(--lh-snug) var(--font);color:var(--ink-2)}
+.ddl .p{font:500 var(--fs-16) var(--font);color:var(--loss);font-variant-numeric:tabular-nums;text-align:right}
+.ddl .p small{display:block;font:400 var(--fs-12) var(--font);color:var(--faint)}
+.vsm{margin-top:18px;padding-bottom:16px}
+.vsm-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px;padding:4px 20px 0;align-items:center}
+.vsm-nums{display:grid;gap:10px}
+.vsm-nums b{display:block;font:300 var(--fs-36)/1.05 var(--font);letter-spacing:var(--ls-tight);font-variant-numeric:tabular-nums}
+.vsm-nums span{font:500 var(--fs-14) var(--font);color:var(--ink-2)}
+.vsm-verdict{margin:4px 0 0;font:600 var(--fs-15) var(--font)}
+.vsm-chart{width:100%;height:170px;display:block}
+.vsm-leg{padding:8px 20px 0}
+@media (max-width:900px){ .vsm-body{grid-template-columns:minmax(0,1fr)} }
+.lessons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}
+.lesson{padding:18px 20px}
+.lesson .ic{width:36px;height:36px;border-radius:12px;background:var(--panel-2);display:grid;place-items:center;margin-bottom:12px}
+.lesson .ic svg{width:18px;height:18px}
+.lesson h4{margin:0 0 6px;font:500 var(--fs-20)/var(--lh-snug) var(--font-story)}
+.lesson p{margin:0;color:var(--ink-2);font-size:var(--fs-15);line-height:var(--lh-body)}
+.more .tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+footer{padding-block:28px 48px;font:400 var(--fs-14)/var(--lh-body) var(--font);color:var(--faint)}
+footer p{max-width:90ch;margin:0 0 6px}
+footer .credit{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:var(--fs-14)}
+footer .credit b{font-weight:600;color:var(--ink)}
+footer .soc{display:flex;gap:6px}
+footer .ldattr{font-size:var(--fs-13);color:var(--faint)}
+footer .soc a{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:12px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font:500 var(--fs-14) var(--font);transition:background-color .18s var(--out),border-color .18s var(--out)}
+footer .soc a:hover{background:color-mix(in srgb,var(--ink) 6%,transparent);border-color:color-mix(in srgb,var(--ink) 28%,transparent)}
+footer .soc svg{width:18px;height:18px}
+
+
+/* ---------- events (Peristiwa) ---------- */
+#peristiwa-top,#evBody,#evHome{scroll-margin-top:calc(var(--top) + 12px)}
+.evhead{padding-top:calc(var(--top) + 36px);padding-bottom:18px}
+.evhead h1{margin:0;font:500 var(--fs-h1)/1.08 var(--font-story);letter-spacing:var(--ls-snug)}
+.evhead p{margin:10px 0 0;max-width:62ch;color:var(--ink-2);font-size:var(--fs-16);line-height:var(--lh-body)}
+.evline{padding:16px 18px 14px}
+.evline svg{display:block;width:100%;height:150px;overflow:visible}
+.evline .ln{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;opacity:.75}
+.evline .ar{fill:color-mix(in srgb,var(--ink) 5%,transparent)}
+.evline .ax{font:500 var(--fs-13) var(--font);fill:var(--faint)}
+.evline .gl{stroke:var(--line);stroke-width:1}
+.evline .band{cursor:pointer}
+.evline .band rect{fill:color-mix(in srgb,var(--faint) 16%,transparent);transition:fill .2s var(--out)}
+.evline .band.down.on rect{fill:color-mix(in srgb,var(--loss) 26%,transparent)}
+.evline .band.up.on rect{fill:color-mix(in srgb,var(--gain) 26%,transparent)}
+.evline .band:hover rect{fill:color-mix(in srgb,var(--faint) 28%,transparent)}
+.evline .band circle{fill:var(--panel-solid);stroke:var(--faint);stroke-width:1.5}
+.evline .band.on circle{fill:var(--ink);stroke:var(--ink)}
+.evline .lbl{font:600 var(--fs-12) var(--font);fill:var(--ink);opacity:.95}
+.evpick{position:relative;display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;padding:2px}
+.evpick::-webkit-scrollbar{display:none}
+.evpick button{flex:1 0 auto;scroll-snap-align:center;display:grid;gap:2px;text-align:left;border:1px solid var(--line);background:color-mix(in srgb,var(--panel-solid) 60%,transparent);border-radius:var(--r-sm);padding:8px 12px;font:600 var(--fs-14)/var(--lh-snug) var(--font);color:var(--ink);cursor:pointer;transition:background-color .18s var(--out),border-color .18s var(--out),color .18s var(--out)}
+.evpick button small{font:500 var(--fs-13) var(--font);font-variant-numeric:tabular-nums}
+.evpick button small.down{color:var(--loss)}.evpick button small.up{color:var(--gain)}
+.evpick button:hover{border-color:var(--faint)}
+.evpick button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.evpick button[aria-selected="true"] small{color:inherit;opacity:.8}
+.evbody{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:20px;align-items:start;padding-block:20px 48px}
+.evinfo{padding:22px 22px 24px;position:sticky;top:calc(var(--top) + 12px)}
+.evinfo .when{font:500 var(--fs-14) var(--font);color:var(--ink-2);margin-top:12px}
+.evinfo h2{margin:6px 0 10px;font:500 var(--fs-28)/var(--lh-tight) var(--font-story);letter-spacing:var(--ls-snug);text-wrap:balance}
+.evinfo > p{margin:0;color:var(--ink-2);font:400 var(--fs-18)/var(--lh-read) var(--font-story)}
+.evstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.evstats div{background:var(--panel-2);border-radius:var(--r-sm);padding:12px 14px}
+.evstats b{display:block;font:500 var(--fs-28)/var(--lh-tight) var(--font);letter-spacing:var(--ls-snug);font-variant-numeric:tabular-nums}
+.evstats span{display:block;margin-top:4px;font-size:var(--fs-13);color:var(--ink-2);line-height:1.35}
+.evlesson{border-left:3px solid var(--ink);padding:2px 0 2px 14px}
+.evlesson h3{margin:0 0 4px;font:600 var(--fs-14) var(--font)}
+.evlesson p{margin:0;font-size:var(--fs-15);line-height:var(--lh-body);color:var(--ink-2)}
+.evbars{padding:6px 10px 12px}
+.evbars .panel-head{padding:14px 10px 6px}
+.evbars .panel-head p{margin:2px 0 0;color:var(--ink-2);font-size:var(--fs-14)}
+.evrows{position:relative}
+.evr,.evh{display:grid;grid-template-columns:30px minmax(96px,150px) minmax(0,1fr) 64px 104px;align-items:center;gap:12px;padding:0 10px}
+.evh{font:500 var(--fs-13) var(--font);color:var(--faint);min-height:30px}
+.evh .tr{position:relative;align-self:stretch}
+.evh .spl{position:absolute;bottom:4px;transform:translateX(-50%);white-space:nowrap;color:var(--ink);font-weight:600}
+.evh .spl.l{transform:none}.evh .spl.r{transform:translateX(-100%)}
+.evh .v,.evr .v{text-align:right}
+.evr{min-height:44px;text-decoration:none;color:var(--ink);border-radius:10px;transition:background-color .15s var(--out)}
+a.evr:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.evr .mono{width:30px;height:30px;font-size:var(--fs-13)}
+.evr .nm{min-width:0}
+.evr .nm b{display:block;font:600 var(--fs-15)/var(--lh-snug) var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evr .nm small{display:block;font:500 var(--fs-13) var(--font);color:var(--faint)}
+.evr .tr{position:relative;align-self:stretch}
+.evr .zero,.evr .sp{position:absolute;top:0;bottom:0;width:0;border-left:1px solid var(--line)}
+.evr .sp{border-left:1.5px dashed var(--ink);opacity:.55}
+.evr .bar{position:absolute;top:50%;height:12px;margin-top:-6px;border-radius:3px;transition:left .5s var(--out),width .5s var(--out),background-color .3s}
+.evr .bar.dn{background:var(--loss)}.evr .bar.upb{background:var(--gain)}
+.evr .v{font:600 var(--fs-15) var(--font);font-variant-numeric:tabular-nums}
+.evr .v.dn{color:var(--loss)}.evr .v.upb{color:var(--gain)}
+.evr .rc{font-size:var(--fs-14);color:var(--ink-2);line-height:1.3}
+.evr .rc.no{color:var(--loss);font-weight:500}
+.evr .nm .rcm{display:none;font:500 var(--fs-13) var(--font);color:var(--ink-2);margin-left:auto;white-space:nowrap}
+.evr .nm .rcm.no{color:var(--loss)}
+.evr.na{opacity:.6}
+.evr.na .tr{display:flex;align-items:center;font-size:var(--fs-13);color:var(--faint)}
+.evnote{margin:10px 10px 0;font-size:var(--fs-13);color:var(--faint);line-height:var(--lh-body)}
+.evcards{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,1fr);gap:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;padding:4px 2px 12px}
+.evcards::-webkit-scrollbar{display:none}
+.evcard{scroll-snap-align:start;display:grid;gap:10px;align-content:start;padding:16px;text-decoration:none;color:var(--ink);transition:transform .2s var(--out),border-color .2s var(--out)}
+.evcard:hover{transform:translateY(-2px)}
+.evcard .yr{font:500 var(--fs-13) var(--font);color:var(--ink-2)}
+.evcard h3{margin:0;font:600 var(--fs-16)/var(--lh-snug) var(--font);text-wrap:balance}
+.evcard .row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:var(--fs-14);color:var(--ink-2)}
+.evcard .row b{font:600 var(--fs-15) var(--font);font-variant-numeric:tabular-nums}
+.evcard .row b.dn{color:var(--loss)}.evcard .row b.upb{color:var(--gain)}
+.evcard .who{display:inline-flex;align-items:center;gap:6px}
+.evcard .who .mono{width:22px;height:22px;font-size:var(--fs-12)}
+@media (max-width:1060px){ .evbody{grid-template-columns:minmax(0,1fr)} .evinfo{position:static} }
+@media (max-width:900px){
+  .evhead{padding-top:calc(var(--top) + 20px);padding-bottom:12px}
+  .evhead p{font-size:var(--fs-15)}
+  .evline{padding:12px 12px 10px}
+  .evline svg{height:110px}
+  .evpick button{flex:none}
+  .evinfo{padding:18px 16px 20px}
+  .evinfo h2{font-size:var(--fs-24)}
+  .evbars{padding:4px 4px 10px}
+  .evr,.evh{grid-template-columns:28px minmax(0,1fr) 62px;grid-template-areas:"m n v" "m t t";column-gap:10px;row-gap:2px;padding:6px 8px}
+  .evh{grid-template-areas:"t t t";padding:4px 8px 0;min-height:26px}
+  .evh > :not(.tr){display:none}
+  .evr .mono{grid-area:m;align-self:start;margin-top:2px;width:28px;height:28px}
+  .evr .nm{grid-area:n;display:flex;align-items:baseline;gap:6px}
+  .evr .nm small{display:none}
+  .evr .nm b{flex:0 1 auto;min-width:0}
+  .evr .v{grid-area:v}
+  .evr .tr{grid-area:t;height:14px}
+  .evh .tr{grid-area:t;height:22px}
+  .evr .rc{display:none}
+  .evr .nm .rcm{display:block}
+  .evr .bar{height:10px;margin-top:-5px}
+}
+@media (prefers-reduced-motion: reduce){ .evr .bar,.evcard{transition:none} }
+
+@media (max-width:1060px){ .homegrid{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:900px){
+  .wrap{padding-inline:16px}
+  .navlinks{display:none}
+  .is-detail .logo,.is-detail .brand{display:none}
+  #langBtn,#themeBtn,#searchBtn{display:none}
+  #menuBtn{display:grid}
+  .brand{gap:8px}
+  .msw .l{display:none}
+  .msw .s{display:inline}
+  .msw button{padding:4px 10px;min-height:30px}
+  .is-detail .top-in{grid-template-columns:1fr auto;padding-left:6px}
+  .is-detail #detailNav{display:flex!important;justify-self:start}
+  #detailNav .back-l{padding:6px 8px;gap:2px}
+  #detailNav .back-l svg{display:block}
+  #detailNav .back-l span,#detailNav .sep{display:none}
+  #detailNav .here{padding-left:0}
+  .top-in{grid-template-columns:1fr auto}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi:nth-child(3){border-left:0}
+  .story{grid-template-columns:minmax(0,1fr);gap:0}
+  .stage{top:var(--top);height:42vh;height:42svh;z-index:5;border-radius:0 0 var(--r-lg) var(--r-lg);margin-inline:-16px;padding:10px 16px 10px;gap:6px;background:var(--panel-solid)}
+  .st-head .t{font-size:var(--fs-16);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .st-price b{font-size:var(--fs-24)}
+  .st-foot .seg,.st-foot .nav-c{display:none}
+  .iconbtn{width:40px;height:40px}
+  .tocbtn{min-height:40px}
+  .float{display:none}
+  .steps{padding-block:3vh 55vh}
+  .step{min-height:70vh;align-items:flex-start;padding-top:4vh}
+  .card{padding:18px 16px 14px}
+  .duo,.lessons{grid-template-columns:minmax(0,1fr)}
+  .more .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .frow > .label{min-width:0;width:100%}
+  .chiprow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-18px;padding-inline:18px}
+  .chiprow .pill{flex:none}
+  .play .lbl{display:none}
+  .kpi .ic{display:none}
+  #fGrowth{display:flex;overflow-x:auto;max-width:100%;scrollbar-width:none}
+  #fGrowth button,.seg button{white-space:nowrap}
+  .search kbd{display:none}
+}
+@media (max-width:520px){
+  .result .big b{font-size:var(--fs-36)}
+  .kpi{padding:14px 12px 12px}
+  .phead .acts{width:100%}
+  .phead .acts .btn{flex:1}
+}
+
+/* phones: no live blur (expensive while scrolling), more room for reading, nothing below 13px */
+@media (max-width:900px){
+  .hero{padding-top:calc(var(--top) + 36px);padding-bottom:170px}
+  .hero-bg{background-position:58% 82%;background-size:auto 100%}
+  .hero .lead{margin:10px 0 16px;font-size:var(--fs-16)}
+  .kpi-lift{margin-top:-64px;padding-inline:16px}
+  .homegrid{padding-block:24px 16px;gap:16px}
+  :root{--top:calc(68px + env(safe-area-inset-top,0px))}
+  .panel,.top,.tip,dialog.toc{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .panel{background:var(--panel-solid)}
+  .top{padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 0}
+  .top-in{height:52px;background:var(--panel-solid);padding:0 6px 0 16px;border-radius:16px}
+  .aura{transition:none;opacity:.45}
+  .stage{height:40svh;min-height:240px;max-height:360px}
+  .chips{padding-bottom:8px}
+  .tag{font-size:var(--fs-13)}
+  .pill .n{opacity:.8}
+  .nextch small,.ddl .p small,.kpi .s,.note,.split{font-size:var(--fs-13)}
+  .mk text{font-size:var(--fs-13)}
+  .card{transition-duration:.3s}
+  .enter{animation-name:fadeUp}
+}
+
+/* phones: compact search + filter sheet, small uniform tiles */
+@media (max-width:900px){
+  .filters{position:sticky;top:var(--top);z-index:6;padding:10px 12px;gap:8px;border-radius:var(--r-md);margin-inline:-4px}
+  .filters > .fadv{display:none}
+  .fmain{flex-wrap:nowrap;gap:8px}
+  .search{flex:1 1 0;min-width:0;min-height:44px;padding:0 12px}
+  .search input{min-width:0;width:100%}
+  .filters{margin-inline:0}
+  .fbtn{display:inline-flex;min-height:44px}
+  .fstatus{gap:8px;font-size:var(--fs-14)}
+  .achips{display:flex}
+  .fstatus #fReset{display:none}
+  .sechead{padding:18px 0 8px}
+  .sechead .legend{font-size:var(--fs-13)}
+  .tiles,.more .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+  .tile{padding:12px 12px 10px;gap:10px;border-radius:var(--r-sm)}
+  .tile::before{left:12px;width:28px}
+  .tile .hd{gap:8px}
+  .tile .mono{width:28px;height:28px;font-size:var(--fs-13)}
+  .tile .nm{font-size:var(--fs-14)}
+  .tile .sub{font-size:var(--fs-13)}
+  .tile .sub .sec{display:none}
+  .tile .mid{align-items:center;gap:10px}
+  .tile .m{font-size:var(--fs-20)}
+  .tile .ml{display:none}
+  .tile .sp{max-width:none;height:24px}
+  .tile dl{padding-top:8px}
+  .tile dl .vs{display:none}
+}
+
+/* desktop filter bar: two rows (search, growth, sort / sectors, result count) */
+@media (min-width:901px){
+  .filters{grid-template-columns:minmax(220px,1fr) auto auto;grid-template-areas:"search growth sort" "sector sector status";gap:12px 14px;align-items:center;padding:14px 16px}
+  .filters > .fmain{grid-area:search}
+  .filters > .fadv{display:contents}
+  .filters > .fadv > .frow:nth-child(1){grid-area:sort}
+  .filters > .fadv > .frow:nth-child(2){grid-area:sector}
+  .filters > .fadv > .frow:nth-child(3){grid-area:growth}
+  .filters > .fstatus{grid-area:status;justify-self:end;flex-wrap:nowrap;white-space:nowrap}
+  .filters .frow > .label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;min-width:0}
+  .filters .chiprow{gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:24px}
+  .filters .chiprow::-webkit-scrollbar{display:none}
+  .filters .chiprow .pill{flex:none}
+  .filters .chiprow .pill{min-height:34px;padding:3px 11px;font-size:var(--fs-14)}
+  .filters > .fstatus{font-size:var(--fs-14);gap:10px}
+}
+/* scroll-driven: epilogue panels rise in as they enter, charts wipe in left to right as they scroll to the middle */
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion:no-preference){
+    .epi .sechead,.epi > .panel,.duo > .panel,.lesson,#moreTiles > *{animation:sdRise linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
+    .duo > .panel:nth-child(2),.lesson:nth-child(2),#moreTiles > :nth-child(2){animation-range:entry 8% entry 78%}
+    .lesson:nth-child(3),#moreTiles > :nth-child(3){animation-range:entry 16% entry 86%}
+    .vsm-chart,.cpath svg{animation:sdWipe linear both;animation-timeline:view();animation-range:entry 30% cover 50%}
+  }
+  @keyframes sdRise{from{opacity:0;translate:0 28px;scale:.985}}
+  @keyframes sdWipe{from{clip-path:inset(-10px 100% -10px 0)}to{clip-path:inset(-10px 0 -10px 0)}}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+.sj-boot #viewHome{visibility:hidden}
+</style>
+
+<div class="aura" aria-hidden="true"></div>
+
+<!-- shared SVG defs: hatch patterns for chart bands -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" style="fill:var(--ink);fill-opacity:.03"/><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--ink);stroke-opacity:.12" stroke-width="1.2"/></pattern>
+    <pattern id="hatch-bull" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" style="fill:var(--gain);fill-opacity:.06"/><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--gain);stroke-opacity:.28" stroke-width="1.2"/></pattern>
+    <pattern id="hatch-bear" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" style="fill:var(--loss);fill-opacity:.06"/><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--loss);stroke-opacity:.28" stroke-width="1.2"/></pattern>
+    <pattern id="hatch-flat" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" style="fill:var(--flat);fill-opacity:.06"/><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--flat);stroke-opacity:.28" stroke-width="1.2"/></pattern>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><a class="logo" href="#home" aria-label="Stock Journey, ke beranda">Stock Journey</a>
+      <div class="seg msw" id="mktSw" role="group" aria-label="Pilih pasar"><button type="button" data-m="us" aria-pressed="true"><span class="l">Saham AS</span><span class="s">AS</span></button><button type="button" data-m="id" aria-pressed="false"><span class="l">Saham Indonesia</span><span class="s">IDN</span></button></div></div>
+    <nav class="navlinks" id="homeNav" aria-label="Navigasi">
+      <a href="#stocks">Semua saham</a><a href="#compare">Bandingkan</a><a href="#events">Peristiwa</a>
+    </nav>
+    <nav class="navlinks crumbs" id="detailNav" aria-label="Lokasi" hidden>
+      <a href="#stocks" class="back-l"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Semua saham</span></a><span class="sep" aria-hidden="true">/</span><span class="here" aria-current="page"><span class="mono" id="crumbMono"></span><b id="crumbName"></b></span>
+    </nav>
+    <div class="top-act">
+      <button class="play" id="play" type="button" aria-pressed="false" aria-label="Putar cerita otomatis" hidden><span id="playIco" aria-hidden="true">▶</span><span class="lbl" id="playLbl">Putar otomatis</span><span class="meter" id="meter"></span></button>
+      <button class="iconbtn ghost lang" id="langBtn" type="button" aria-label="Switch to English" lang="en">EN</button>
+      <button class="iconbtn ghost" id="searchBtn" type="button" aria-label="Cari saham"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button class="iconbtn ghost" id="themeBtn" type="button" aria-label="Ganti ke mode terang">
+        <svg class="sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 2.2v2M10 15.8v2M2.2 10h2M15.8 10h2M4.5 4.5l1.4 1.4M14.1 14.1l1.4 1.4M4.5 15.5l1.4-1.4M14.1 5.9l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg class="moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 12.2A6.8 6.8 0 0 1 7.8 3.5a6.8 6.8 0 1 0 8.7 8.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="iconbtn ghost" id="menuBtn" type="button" aria-haspopup="dialog" aria-label="Buka menu"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="progress" id="progress"></div>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <div id="viewHome">
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="wrap h-text">
+        <h1>Kisah di balik grafik saham</h1>
+        <p class="lead">Setiap lonjakan dan kejatuhan punya penyebab. Pilih sebuah perusahaan, lalu ikuti perjalanan sahamnya bab demi bab, lengkap dengan peristiwa yang menggerakkannya.</p>
+        <div class="acts">
+          <a class="btn dark" href="#stocks">Pilih perusahaan</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap kpi-lift"><div class="panel kpis" id="homeKpis"></div></section>
+
+    <section class="wrap homegrid">
+      <div class="panel cmp" id="banding">
+        <div class="panel-head"><h2 id="cmpH">Ke mana $1 pergi</h2><div class="seg" id="cmpSeg" role="group" aria-label="Cara hitung"><button type="button" data-cmp="px" aria-pressed="true">Harga saja</button><button type="button" data-cmp="tr" aria-pressed="false">Dengan dividen</button></div></div>
+        <div class="chips" id="chips"></div>
+        <div class="cmp-box" id="cmpBox"><svg id="cmpSvg" role="img" aria-label="Grafik perbandingan nilai $1 di saham-saham terpilih"></svg><div class="tip" id="cmpTip" aria-hidden="true"></div></div>
+        <div class="foot"><p class="note" id="cmpMsg" aria-live="polite"></p><p class="note" id="cmpNote">Saham AS, dalam dolar. Pilih hingga 4 saham. Garis putus-putus adalah S&amp;P 500 sebagai pembanding pasar. Nilai $1 yang dibeli di awal 2010, atau saat melantai untuk Tesla, Meta, dan Palantir. "Dengan dividen" berarti dividen diinvestasikan kembali. Skala logaritmik; area berarsir menandai kejatuhan pasar.</p></div>
+      </div>
+      <div class="panel drama">
+        <div class="panel-head"><h2>Bab paling dramatis</h2>
+          <div class="seg" role="group" aria-label="Jenis bab"><button type="button" data-dr="bull" aria-pressed="true">Reli</button><button type="button" data-dr="bear" aria-pressed="false">Kejatuhan</button></div>
+        </div>
+        <ol id="dramaList"></ol>
+      </div>
+    </section>
+
+    <section class="wrap" id="saham">
+      <div class="sechead"><div><h2>Semua saham</h2><p>Kenaikan harga sejak 2010, penurunan terdalam, dan hasilnya dibanding pasar.</p></div>
+      </div>
+      <div class="panel filters" role="search" aria-label="Cari dan saring saham">
+        <div class="frow fmain">
+          <label class="search" for="fSearch"><span class="vh">Cari saham</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="search" id="fSearch" placeholder="Cari nama, kode, atau sektor" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd>
+          </label>
+          <button type="button" class="fbtn" id="fOpen" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8M8.5 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Filter<span class="badge" id="fBadge" hidden></span></button>
+        </div>
+        <div class="fadv" id="fAdv">
+          <div class="frow"><span class="label" id="sLbl">Urutkan</span><div class="seg" role="group" aria-labelledby="sLbl"><button type="button" data-sort="mult" aria-pressed="true">Kelipatan</button><button type="button" data-sort="worst" aria-pressed="false">Kejatuhan</button><button type="button" data-sort="name" aria-pressed="false">Nama</button></div></div>
+          <div class="frow"><span class="label" id="gLbl">Sektor</span><div class="chiprow" id="fGroup" role="group" aria-labelledby="gLbl"></div></div>
+          <div class="frow"><span class="label" id="grLbl">Kenaikan harga</span><div class="seg" id="fGrowth" role="group" aria-labelledby="grLbl"></div></div>
+        </div>
+        <div class="fstatus"><span id="fCount" aria-live="polite"></span><span class="achips" id="fChips"></span><button type="button" class="linkbtn" id="fReset" hidden>Hapus filter</button></div>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="tmore"><button type="button" class="btn" id="tilesMore" hidden></button></div>
+    </section>
+    <section class="wrap" id="evHome">
+      <div class="sechead"><div><h2>Saat pasar diguncang</h2><p>Peristiwa besar sejak 2010 dan saham yang paling terpukul.</p></div>
+        <a class="linkbtn" href="#events">Lihat semua peristiwa</a></div>
+      <div class="evcards" id="evCards"></div>
+    </section>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="viewDetail" hidden>
+    <section class="wrap dhead" id="dHead"></section>
+    <section class="wrap"><div class="panel kpis" id="dKpis"></div></section>
+
+    <section class="wrap story" id="story">
+      <div class="panel stage">
+        <div class="st-head">
+          <div style="min-width:0"><div class="c" id="counter"></div><div class="t" id="chTitle"></div></div>
+          <div class="st-price"><b id="price"></b><span class="tag" id="pill"></span></div>
+        </div>
+        <div class="chart-box" id="chartBox"><svg id="storySvg" role="img" aria-label="Grafik harga untuk bab yang sedang dibaca"></svg></div>
+        <div class="st-foot">
+          <div class="seg" role="group" aria-label="Skala grafik"><button type="button" id="mFocus" aria-pressed="true">Fokus bab</button><button type="button" id="mAll" aria-pressed="false">Seluruh periode</button></div>
+          <div class="strip" id="strip" aria-hidden="true"></div>
+          <button type="button" class="tocbtn" id="tocBtn" aria-haspopup="dialog">Daftar bab</button>
+          <button type="button" class="iconbtn" id="prev" aria-label="Bab sebelumnya"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5M5.5 9.5 10 5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button type="button" class="iconbtn" id="next" aria-label="Bab berikutnya"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 5v10M5.5 10.5 10 15l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="steps" id="steps"></div>
+    </section>
+
+    <section class="wrap epi" id="epilog">
+      <div class="sechead"><div><h2>Seluruh perjalanan</h2><p>Arahkan kursor atau sentuh grafik untuk melihat harga di tanggal mana pun. Klik pita berwarna untuk membuka babnya.</p></div></div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="legend"><span><i style="background:var(--gain)"></i>Bullish</span><span><i style="background:var(--loss)"></i>Bearish</span><span><i style="background:var(--flat)"></i>Sideways</span></div>
+          <div class="seg" role="group" aria-label="Skala grafik penuh"><button type="button" id="xLog" aria-pressed="true">Logaritmik</button><button type="button" id="xLin" aria-pressed="false">Linear</button></div>
+        </div>
+        <div class="ex-box" id="exBox"><svg id="exSvg" role="img" aria-label="Grafik harga lengkap dengan pita bab"></svg><div class="tip" id="tip" aria-hidden="true"></div></div>
+        <details class="data"><summary>Lihat data per bab dalam tabel</summary><div class="tbl"><table class="dt" id="dataTbl"></table></div></details>
+      </div>
+      <div class="duo">
+        <div class="panel box">
+          <div class="panel-head"><h3>Bagaimana jika kamu membeli?</h3>
+            <div class="seg" role="group" aria-label="Mata uang"><button type="button" data-cur="usd" aria-pressed="true">US$</button><button type="button" data-cur="idr" aria-pressed="false">Rupiah</button></div>
+          </div>
+          <p class="sub" id="calcSub"></p>
+          <div class="field"><span class="label" id="divLbl">Dividen</span><div class="seg" role="group" aria-labelledby="divLbl"><button type="button" data-div="no" aria-pressed="true">Tidak dihitung</button><button type="button" data-div="yes" aria-pressed="false">Diinvestasikan kembali</button></div></div>
+          <div class="field"><label for="amt" id="amtLbl">Modal (US$)</label><input type="text" id="amt" value="1.000" inputmode="numeric" autocomplete="off"></div>
+          <div class="field"><label for="yr">Beli di awal tahun <output id="yrOut" for="yr">2010</output></label><input type="range" id="yr" min="2010" max="2025" step="1" value="2010"></div>
+          <div class="result" aria-live="polite">
+            <div class="big"><b id="rVal"></b><span id="rValLbl">Nilai di akhir 2025</span></div>
+            <div><b id="rBuy"></b><span>Harga beli per saham</span></div>
+            <div><b id="rMul"></b><span>Kelipatan</span></div>
+            <div><b id="rCagr"></b><span>Per tahun</span></div>
+          </div>
+          <div class="cpath">
+            <svg id="calcSvg" role="img" aria-labelledby="calcCap"></svg>
+            <p class="cpath-cap" id="calcCap" aria-live="off"></p>
+          </div>
+          <div class="result risk">
+            <div><b id="rDD"></b><span id="rDDLbl">Penurunan terdalam selama memegang</span></div>
+            <div><b id="rLow"></b><span id="rLowLbl">Nilai terendah</span></div>
+          </div>
+          <p class="fxnote" id="fxNote"></p>
+        </div>
+        <div class="panel box">
+          <div class="panel-head"><h3>Kejatuhan terbesar</h3></div>
+          <p class="sub">Klik untuk membuka babnya. Tanggal pulih adalah perkiraan bulan ketika harga kembali ke puncak sebelumnya.</p>
+          <ol class="ddl" id="ddList"></ol>
+        </div>
+      </div>
+      <div class="panel vsm" id="vsMarket"></div>
+      <div class="lessons" id="lessons"></div>
+      <div class="sechead more-h"><div><h2>Kisah lainnya</h2></div></div>
+      <div class="more"><div class="tiles" id="moreTiles"></div></div>
+    </section>
+  </div>
+
+  <!-- EVENTS -->
+  <div id="viewEvents" hidden>
+    <section class="wrap evhead" id="peristiwa-top">
+      <h1>Saat pasar diguncang</h1>
+      <p>Peristiwa besar sejak 2010 dan reaksi setiap saham. Pilih satu peristiwa untuk melihat saham mana yang tahan dan mana yang paling terpukul.</p>
+    </section>
+    <section class="wrap">
+      <div class="panel evline">
+        <svg id="evSvg" role="img" aria-label="S&amp;P 500 sejak 2010 dengan periode setiap peristiwa ditandai"></svg>
+        <div class="evpick" id="evPick" role="tablist" aria-label="Pilih peristiwa"></div>
+      </div>
+    </section>
+    <section class="wrap evbody" id="evBody" role="tabpanel">
+      <div class="panel evinfo" id="evInfo"></div>
+      <div class="panel evbars">
+        <div class="panel-head"><div><h3 id="evBarsH">Dampak ke setiap saham</h3><p>Perubahan harga selama periode peristiwa, diurutkan dari yang paling tahan. Ketuk saham untuk membaca babnya.</p></div></div>
+        <div class="evrows" id="evRows"></div>
+        <p class="evnote">Perubahan dihitung dari harga penutupan pada hari pertama hingga hari terakhir periode, tanpa dividen. “Pulih” berarti harga kembali ke level sebelum peristiwa, dihitung dari hari pertama periode; data sampai 31 Desember 2025.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<dialog class="sheet pick" id="cmpPick" aria-labelledby="cmpPickTitle">
+  <div class="sheet-head"><h2 id="cmpPickTitle">Pilih saham</h2><button type="button" class="iconbtn" id="cmpPickClose" aria-label="Tutup"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+  <div class="sheet-body">
+    <div class="psearch"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="search" id="cmpQ" autocomplete="off"></div>
+    <div class="pgroup" id="cmpPresetsWrap"><h3 id="cmpPresetsLbl">Pilihan cepat</h3><div class="ppills" id="cmpPresets" role="group" aria-labelledby="cmpPresetsLbl"></div></div>
+    <div id="cmpList"></div>
+    <p class="pempty" id="cmpEmpty" hidden></p>
+  </div>
+  <div class="sheet-foot"><span class="pcount" id="cmpCount" aria-live="polite"></span><button type="button" class="btn dark" id="cmpDone">Selesai</button></div>
+</dialog>
+
+<dialog class="sheet" id="fSheet" aria-labelledby="fSheetTitle">
+  <div class="sheet-head"><h2 id="fSheetTitle">Filter saham</h2><button type="button" class="iconbtn" id="fClose" aria-label="Tutup filter"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+  <div class="sheet-body" id="fSheetBody"></div>
+  <div class="sheet-foot"><button type="button" class="btn" id="fSheetReset">Hapus filter</button><button type="button" class="btn dark" id="fApply"></button></div>
+</dialog>
+
+<dialog class="sheet menu" id="mMenu" aria-labelledby="mMenuTitle">
+  <div class="sheet-head"><h2 id="mMenuTitle">Menu</h2><button type="button" class="iconbtn" id="mMenuClose" aria-label="Tutup menu"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+  <div class="sheet-body">
+    <nav class="mlinks" aria-label="Navigasi">
+      <button type="button" data-go="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Cari saham</span></button>
+      <a href="#stocks" data-go="link"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Semua saham</span></a>
+      <a href="#compare" data-go="link"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 15l4-5 3 3 7-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Bandingkan</span></a>
+      <a href="#events" data-go="link" class="mev"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3l7 12H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Peristiwa</span></a>
+    </nav>
+    <div class="mset">
+      <div class="frow"><span class="label" id="mLangLbl">Bahasa</span><div class="seg" role="group" aria-labelledby="mLangLbl"><button type="button" data-lang="id" lang="id">Indonesia</button><button type="button" data-lang="en" lang="en">English</button></div></div>
+      <div class="frow"><span class="label" id="mThemeLbl">Tampilan</span><div class="seg" role="group" aria-labelledby="mThemeLbl"><button type="button" data-th="light">Terang</button><button type="button" data-th="dark">Gelap</button></div></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="toc" id="toc" aria-labelledby="tocTitle">
+  <div class="toc-head"><h2 id="tocTitle">Daftar bab</h2><button type="button" class="iconbtn" id="tocClose" aria-label="Tutup daftar bab"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+  <ol id="tocList"></ol>
+</dialog>
+
+<footer><div class="wrap">
+  <p id="footSrc"></p>
+  <p>Halaman ini bukan saran investasi. Kinerja masa lalu tidak menjamin hasil di masa depan.</p>
+  <div class="credit"><span>Dibuat oleh <b>Bagas Prasetyadi</b></span>
+    <a class="ldattr" href="https://logo.dev" target="_blank" rel="noopener">Logos provided by Logo.dev</a>
+    <span class="soc"><a href="https://www.instagram.com/bagas.prasetyadi" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14.1" cy="5.9" r="1" fill="currentColor"/></svg>Instagram</a><a href="https://www.linkedin.com/in/bagas-prasetyadi/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.8 9v4.4M6.8 6.6v.1M9.6 13.4V9m0 1.9c0-1.2.8-1.9 1.8-1.9s1.7.7 1.7 1.9v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>LinkedIn</a></span>
+  </div>
+</div></footer>
+
+<script src="d/ids.js"></script>
+<script>
+window.__sjStart = () => {
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const QUIET = !!window.__sjQuiet; // re-run after an in-place language switch: skip entrance animations
+/* ---------- settings: language and market, kept per browser ---------- */
+const store = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }};
+const EN = store.get('sj-lang') === 'en';
+const L = (id, en) => EN ? en : id;
+const LOC = EN ? 'en-US' : 'id-ID';
+document.documentElement.lang = EN ? 'en' : 'id';
+const ALL = window.STOCKS;
+// a stock link opens in its own market; the events page belongs to the US market
+const hash0 = location.hash.slice(1).toLowerCase(), hashMkt = (window.SJ_IDS || {})[hash0];
+let MKT = store.get('sj-mkt') === 'id' ? 'id' : 'us';
+if (hashMkt) MKT = hashMkt;
+store.set('sj-mkt', MKT);
+document.documentElement.dataset.mkt = MKT;
+const MONTHS = EN ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const DAY = 864e5, YR = 365.25*DAY;
+const $ = id => document.getElementById(id);
+const ts = s => Date.parse(s+'T00:00:00Z');
+const num = (v, d=2) => v.toLocaleString(LOC, {minimumFractionDigits:d, maximumFractionDigits:d});
+const usd = v => '$' + num(v, 2);
+const usdShort = v => v < 1 ? Math.round(v*100) + L(' sen', ' cents') : '$' + (v < 10 ? num(v,2) : Math.round(v).toLocaleString(LOC));
+const isID = S => !!S && S.mkt === 'id';
+const rpx = v => 'Rp' + Math.round(v).toLocaleString(LOC);
+const px = (S, v) => isID(S) ? rpx(v) : usd(v);
+const pxShort = (S, v) => isID(S) ? rpx(v) : usdShort(v);
+const mkName = S => isID(S) ? L('IHSG', 'JCI') : 'S&P 500';
+const GL = {'Teknologi':'Technology','Komunikasi & media':'Communication & media','Konsumen':'Consumer','Keuangan':'Financials','Kesehatan':'Health care','Energi':'Energy','Bahan baku':'Materials','Industri':'Industrials'};
+const gname = g => EN ? GL[g] || g : g;
+const pct = p => (p >= 0 ? '+' : '−') + Math.abs(Math.round(p)).toLocaleString(LOC) + '%';
+const mult = m => (m >= 10 ? Math.round(m).toLocaleString(LOC) : num(m, 1)) + '×';
+const fdate = t => { const d = new Date(t); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+const fmon = t => { const d = new Date(t); return MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const TYPE_LABEL = {bull:'Bullish', bear:'Bearish', flat:'Sideways'};
+const isNarrow = () => matchMedia('(max-width:900px)').matches;
+const tag = c => `<span class="tag ${c.type}"><i></i>${TYPE_LABEL[c.type]}</span>`;
+
+/* ---------- prepare series ---------- */
+const STOCKS = ALL.filter(S => (S.mkt === 'id') === (MKT === 'id'));
+// brand color tokens come from the data (src/meta.js): --b-* follows the theme, --bl-* stays the light color for logo tiles
+(() => {
+  const lt = ALL.map(S => `--b-${S.id}:${S.c};--bl-${S.id}:${S.c};`).join(''), dk = ALL.map(S => `--b-${S.id}:${S.cd};`).join('');
+  document.getElementById('sjBrand')?.remove();
+  const st = document.createElement('style'); st.id = 'sjBrand';
+  st.textContent = `:root{${lt}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${dk}}}:root[data-theme="dark"]{${dk}}`;
+  document.head.appendChild(st);
+})();
+function prepStock(S){
+  S.b = `var(--b-${S.id})`; S.ini = S.ini || S.name[0];
+  S.D = S.raw.map(([d,v]) => ({t: ts(d), v}));
+  S.T0 = S.D[0].t; S.T1 = S.D[S.D.length-1].t;
+  S.val = t => {
+    const D = S.D;
+    if (t <= S.T0) return D[0].v;
+    if (t >= S.T1) return D[D.length-1].v;
+    let lo = 0, hi = D.length-1;
+    while (hi-lo > 1){ const m = (lo+hi) >> 1; if (D[m].t <= t) lo = m; else hi = m; }
+    const a = D[lo], b = D[hi], k = (t-a.t)/(b.t-a.t);
+    return Math.exp(Math.log(a.v) + (Math.log(b.v)-Math.log(a.v))*k);
+  };
+  S.start = S.D[0].v; S.end = S.D[S.D.length-1].v; S.mult = S.end/S.start;
+  S.ch.forEach((c,i) => {
+    c.i = i; c.S = S; c.st = ts(c.s); c.et = ts(c.e);
+    c.from = S.val(c.st); c.to = S.val(c.et); if (c.pct == null) c.pct = (c.to/c.from - 1)*100;
+    c.events = (c.ev || []).map(([d,l]) => ({t: ts(d), label: l}));
+    c.when = fmon(c.st) + ' – ' + fmon(c.et);
+  });
+  S.worst = Math.min(...S.ch.map(c => c.pct));
+  S.worstCh = S.ch.find(c => c.pct === S.worst);
+  S.bestCh = S.ch.reduce((a, c) => c.pct > a.pct ? c : a);
+  S.growth = S.mult >= 10 ? 'big' : S.mult >= 2 ? 'mid' : 'low';
+  S.TR = (S.tr || []).map(([d, v]) => ({t: ts(d), v})); S.trAt = t => interp(S.TR, t);
+}
+ALL.forEach((S, si) => { S.si = si; prepStock(S); });
+// the full story (weekly prices, chapter text, lessons) is a separate small file per stock and language
+function loadStock(S){
+  if (S.full) return Promise.resolve(S);
+  return new Promise((ok, fail) => {
+    if ((window.SJ_STOCK || {})[S.id]){ const f = window.SJ_STOCK[S.id], pct = S.ch.map(c => c.pct); Object.assign(S, f); S.ch.forEach((c, i) => { if (c.pct == null) c.pct = pct[i]; }); S.full = true; prepStock(S); return ok(S); }
+    const sc = document.createElement('script');
+    sc.src = `d/s/${S.id}-${EN ? 'en' : 'id'}.js`;
+    sc.onload = () => { const f = (window.SJ_STOCK || {})[S.id]; if (!f) return fail(); const pct = S.ch.map(c => c.pct); Object.assign(S, f); S.ch.forEach((c, i) => { if (c.pct == null) c.pct = pct[i]; }); S.full = true; prepStock(S); ok(S); };
+    sc.onerror = fail;
+    document.head.appendChild(sc);
+  });
+}
+
+// total return (dividends reinvested, month-end) and the S&P 500
+function interp(arr, t){
+  if (!arr.length) return NaN;
+  if (t <= arr[0].t) return arr[0].v;
+  if (t >= arr[arr.length-1].t) return arr[arr.length-1].v;
+  let lo = 0, hi = arr.length-1;
+  while (hi-lo > 1){ const m = (lo+hi) >> 1; if (arr[m].t <= t) lo = m; else hi = m; }
+  const a = arr[lo], b = arr[hi], k = (t-a.t)/(b.t-a.t);
+  return Math.exp(Math.log(a.v) + (Math.log(b.v)-Math.log(a.v))*k);
+}
+const MKD = window.MARKET || {}, mkSer = k => (MKD[k] || []).map(([d, v]) => ({t: ts(d), v}));
+const MK = {px: mkSer('spx'), tr: mkSer('sptr'), jk: mkSer('jkse')};
+// stock vs its home market: US stocks with dividends vs S&P 500 total return; IDX stocks price vs IHSG (no total-return index)
+const vsMkt = S => isID(S) ? S.mult / mkMult(MK.jk, S.T0, S.T1) : (S.trMult || S.mult) / mkMult(MK.tr, S.T0, S.T1);
+const mkMult = (series, t0, t1) => interp(series, t1) / interp(series, t0);
+const byId = Object.fromEntries(ALL.map(S => [S.id, S]));
+const ALLCH = STOCKS.flatMap(S => S.ch);
+const GT0 = Math.min(...STOCKS.map(S => S.T0)), GT1 = Math.max(...STOCKS.map(S => S.T1));
+// logos: Simple Icons (SVG, CC0) first; otherwise Logo.dev by company domain, with the monogram underneath as fallback
+const LOGO_DEV_KEY = 'pk_E3bR7OWJSOyxVVI6g9GXUQ';
+const ini = S => S.ini.length > 1 ? `<span class="m3">${S.ini}</span>` : S.ini;
+const mono = (S, cls = '') => {
+  if (S.logo) return `<span class="mono ${cls}" style="--b:var(--bl-${S.id})" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${S.logo}"/></svg></span>`;
+  const ld = S.ld;
+  if (!ld) return `<span class="mono ${cls}" style="--b:var(--bl-${S.id})" aria-hidden="true">${ini(S)}</span>`;
+  return `<span class="mono lgd${ld[1] ? ' fill' : ''} ${cls}" style="--b:var(--bl-${S.id})" aria-hidden="true"><span class="ini">${ini(S)}</span><img src="https://img.logo.dev/${ld[0]}?token=${LOGO_DEV_KEY}&size=128&format=png&fallback=404" alt="" loading="lazy" decoding="async" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"></span>`;
+};
+
+/* bar strip: price history as thin bars, the highlighted range in ink */
+function bars(S, from = S.T0, to = S.T0 - 1, n = 64){
+  const vals = S.D.map(d => d.v), l0 = Math.log10(Math.min(...vals)), l1 = Math.log10(Math.max(...vals));
+  let out = '';
+  for (let k = 0; k < n; k++){
+    const t = S.T0 + (S.T1 - S.T0)*(k + .5)/n, v = S.val(t), h = 4 + 30*(Math.log10(v) - l0)/(l1 - l0 || 1);
+    out += `<rect x="${(k*100/n + .4).toFixed(2)}%" y="${(34-h).toFixed(1)}" width="${(100/n*.45).toFixed(2)}%" height="${h.toFixed(1)}" rx="1"${t >= from && t <= to ? ' class="on"' : ''}/>`;
+  }
+  return `<svg class="bars" aria-hidden="true" preserveAspectRatio="none">${out}</svg>`;
+}
+const chLink = c => `#${c.S.id}`;
+
+/* ---------- price chart (story + explorer) ---------- */
+class StockChart {
+  constructor(svg, opt = {}){
+    this.svg = svg; this.opt = opt;
+    this.s = {x0:0, x1:1, y0:0, y1:1, l0:0, l1:1, m:1, rev:1, h0:0, h1:0};
+    this.type = 'bear'; this.events = [];
+    svg.innerHTML = `<g class="bands"></g><rect class="hl"/><line class="hledge e0"/><line class="hledge e1"/><g class="grid"></g>
+      <g class="cp"><path class="area"/><path class="pline"/></g>
+      <g class="mks"></g><g class="end"><circle class="o" r="11"/><circle class="i" r="5"/></g>
+      <g class="hov" style="display:none"><line class="cross"/><circle r="5" style="fill:var(--ink);stroke:var(--panel-solid);stroke-width:2"/></g>`;
+    const q = s => svg.querySelector(s);
+    Object.assign(this, {gBands:q('.bands'), hl:q('.hl'), e0:q('.e0'), e1:q('.e1'), gGrid:q('.grid'), area:q('.area'), line:q('.pline'), gMk:q('.mks'), gEnd:q('.end'), hov:q('.hov')});
+    this.area.style.fill = 'color-mix(in srgb, var(--ink) 6%, transparent)';
+    if (opt.bands){ this.gEnd.style.display = 'none'; this.hl.style.display = 'none'; this.e0.style.display = this.e1.style.display = 'none'; }
+    new ResizeObserver(() => this.resize()).observe(svg.parentElement);
+  }
+  setStock(S){ const re = isID(S) !== isID(this.S); this.S = S; cancelAnimationFrame(this.raf); if (re && this.w) this.resize(); }
+  resize(){
+    const r = this.svg.parentElement.getBoundingClientRect();
+    this.w = r.width; this.h = r.height; if (!this.w || !this.h) return;
+    const narrow = this.w < 520;
+    this.pad = {l: (narrow ? 46 : 56) + (isID(this.S) ? 14 : 0), r: narrow ? 12 : 22, t: this.opt.bands ? 26 : (narrow ? 12 : 20), b: 26};
+    this.svg.setAttribute('viewBox', `0 0 ${this.w} ${this.h}`);
+    this.render();
+  }
+  X(t){ const {x0,x1} = this.s; return this.pad.l + (t-x0)/(x1-x0) * (this.w-this.pad.l-this.pad.r); }
+  invX(px){ const {x0,x1} = this.s; return x0 + (px-this.pad.l)/(this.w-this.pad.l-this.pad.r) * (x1-x0); }
+  Y(v){
+    const {y0,y1,l0,l1,m} = this.s, ih = this.h-this.pad.t-this.pad.b;
+    const lin = (v-y0)/(y1-y0), lg = (Math.log10(Math.max(v,1e-3))-l0)/(l1-l0);
+    return this.pad.t + ih*(1 - (lin*(1-m) + lg*m));
+  }
+  animate(tg, dur = 800){
+    cancelAnimationFrame(this.raf);
+    if (REDUCED || !dur){ Object.assign(this.s, tg); this.render(); return; }
+    const from = {...this.s}, keys = Object.keys(tg), st = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now-st)/dur), k = p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p+2, 3)/2;
+      for (const key of keys) this.s[key] = from[key] + (tg[key]-from[key])*k;
+      this.render();
+      if (p < 1) this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  yTicks(){
+    const {y0,y1,l0,l1,m} = this.s;
+    const maxT = this.h < 260 ? 4 : 6;
+    if (m >= .5){
+      let out = [];
+      for (let e = -2; e <= 4; e++) for (const f of [1,2,5]){ const v = f*Math.pow(10,e); const lv = Math.log10(v); if (lv >= l0 && lv <= l1) out.push(v); }
+      if (out.length > maxT) out = out.filter(v => /^[15]/.test(v.toPrecision(1)));
+      if (out.length > maxT) out = out.filter(v => /^1/.test(v.toPrecision(1)));
+      return out;
+    }
+    const raw = (y1-y0)/(maxT-1), e = Math.pow(10, Math.floor(Math.log10(raw))), f = raw/e;
+    const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10)*e, out = [];
+    for (let v = Math.ceil(y0/step)*step; v <= y1 + 1e-9; v += step) out.push(+v.toPrecision(6));
+    this.ystep = step;
+    return out;
+  }
+  xTicks(){
+    const {x0,x1} = this.s, span = (x1-x0)/YR, avail = this.w-this.pad.l-this.pad.r;
+    let stepM = span > 9 ? 24 : span > 2.6 ? 12 : span > .9 ? 3 : 1;
+    while (avail / ((x1-x0)/(30.44*DAY)/stepM) < 54 && stepM < 48) stepM *= 2;
+    let y = new Date(x0).getUTCFullYear(), mo = 0;
+    if (stepM >= 24 && y % 2) y -= 1;
+    const out = [];
+    for (let g = 0; g < 400; g++){
+      const t = Date.UTC(y, mo, 1); if (t > x1) break;
+      if (t >= x0) out.push({t, label: mo === 0 ? String(y) : MONTHS[mo]});
+      mo += stepM; while (mo >= 12){ mo -= 12; y++; }
+    }
+    return out;
+  }
+  render(){
+    const S = this.S;
+    if (!S || !this.w || !this.h) return;
+    const {x0,x1,rev,h0,h1,m} = this.s, p = this.pad, W = this.w, H = this.h, bottom = H-p.b;
+    const yt = this.yTicks(), xt = this.xTicks();
+    const lab = v => { if (isID(S)) return rpx(v); if (m < .5){ const st = this.ystep || 1; const d = st < .1 ? 2 : st < 1 ? (v < 1 ? 2 : 1) : 0; return '$' + num(v, d); } return '$' + num(v, v < 1 ? (v*10 % 1 ? 2 : 1) : 0); };
+    let g = '';
+    for (const v of yt){ const y = this.Y(v); if (y < p.t-2 || y > bottom+2) continue;
+      g += `<line x1="${p.l}" x2="${W-p.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text class="ax" x="${p.l-10}" y="${(y+4).toFixed(1)}" text-anchor="end">${lab(v)}</text>`; }
+    for (const k of xt){ const x = this.X(k.t); g += `<text class="ax" x="${x.toFixed(1)}" y="${bottom+18}" text-anchor="middle">${k.label}</text>`; }
+    this.gGrid.innerHTML = g;
+    if (!this.opt.bands){
+      const a = Math.max(p.l, this.X(h0)), b = Math.min(W-p.r, this.X(h1));
+      this.hl.setAttribute('class', 'hl ' + this.type);
+      this.hl.setAttribute('x', a); this.hl.setAttribute('y', 0); this.hl.setAttribute('width', Math.max(0, b-a)); this.hl.setAttribute('height', bottom);
+      [[this.e0,a],[this.e1,b]].forEach(([el,x]) => { el.setAttribute('class','hledge '+this.type); el.setAttribute('x1',x); el.setAttribute('x2',x); el.setAttribute('y1',0); el.setAttribute('y2',bottom); el.style.display = b-a > 1 ? '' : 'none'; });
+    } else {
+      this.gBands.innerHTML = S.ch.map(c => { const a = this.X(c.st), b = this.X(c.et);
+        return `<g class="band ${c.type}"><rect class="f" x="${a}" y="${p.t-14}" width="${Math.max(0,b-a)}" height="${bottom-p.t+14}"/><rect x="${a+.5}" y="${p.t-14}" width="${Math.max(0,b-a-1)}" height="4" rx="2"/></g>`; }).join('');
+    }
+    const a = Math.max(x0, S.T0), b = Math.min(rev, x1, S.T1);
+    if (b > a){
+      const pts = [[a, S.val(a)]];
+      for (const d of S.D) if (d.t > a && d.t < b) pts.push([d.t, d.v]);
+      pts.push([b, S.val(b)]);
+      const ln = pts.map((q,i) => (i ? 'L' : 'M') + this.X(q[0]).toFixed(1) + ',' + this.Y(q[1]).toFixed(1)).join('');
+      this.line.setAttribute('d', ln);
+      this.area.setAttribute('d', ln + `L${this.X(b).toFixed(1)},${bottom}L${this.X(a).toFixed(1)},${bottom}Z`);
+    } else { this.line.setAttribute('d',''); this.area.setAttribute('d',''); }
+    const ev = S.val(rev), ex = this.X(Math.min(rev, x1)), ey = this.Y(ev);
+    this.gEnd.setAttribute('transform', `translate(${ex.toFixed(1)},${ey.toFixed(1)})`);
+    let mk = '', lastX = -1e9, level = 0;
+    const compact = H < 260 || W < 520;
+    const shown = this.events.filter(e => e.t <= rev + 1 && e.t >= x0 && e.t <= x1);
+    const lastE = shown[shown.length-1];
+    for (const e of this.events){
+      if (e.t > rev + 1 || e.t < x0 || e.t > x1) continue;
+      const cx = this.X(e.t), cy = this.Y(S.val(e.t));
+      const op = Math.max(0, Math.min(1, (this.X(rev) - cx + 2)/40));
+      level = cx - lastX < 150 ? level + 1 : 0; lastX = cx;
+      if (compact && e !== lastE){ mk += `<g class="mk" style="opacity:${op.toFixed(2)}"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4"/></g>`; continue; }
+      const tw = e.label.length*6.4 + 18, step = compact ? 22 : 26, above = cy - 30 - level*step > p.t;
+      const ly = above ? cy - 22 - level*step : cy + 22 + level*step;
+      const ax = Math.max(p.l + 2, Math.min(W - p.r - tw - 2, cx - tw/2));
+      mk += `<g class="mk" style="opacity:${op.toFixed(2)}"><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${ly}"/><rect x="${ax.toFixed(1)}" y="${(ly-11).toFixed(1)}" width="${tw.toFixed(1)}" height="22" rx="11"/><text x="${(ax+9).toFixed(1)}" y="${(ly+4).toFixed(1)}">${esc(e.label)}</text><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5"/></g>`;
+    }
+    this.gMk.innerHTML = mk;
+    if (this.onFrame) this.onFrame(ev, ex, ey);
+  }
+}
+
+// open a modal dialog without the page jumping (focusing inside a dialog can scroll the page)
+function openModal(dlg, focusEl){
+  const y = scrollY;
+  dlg.showModal();
+  window.scrollTo(0, y);
+  if (focusEl) focusEl.focus({preventScroll:true});
+  requestAnimationFrame(() => { if (Math.abs(scrollY - y) > 1) window.scrollTo(0, y); });
+}
+/* ---------- static text in English ---------- */
+const STATIC_EN = [
+  ['.logo', 'aria-label', 'Stock Journey, home'],
+  ['#mktSw', 'aria-label', 'Choose market'],
+  ['#mktSw [data-m="us"] .l', 'text', 'US stocks'], ['#mktSw [data-m="us"] .s', 'text', 'US'],
+  ['#mktSw [data-m="id"] .l', 'text', 'Indonesian stocks'], ['#mktSw [data-m="id"] .s', 'text', 'IDN'],
+  ['#homeNav', 'aria-label', 'Navigation'],
+  ['#homeNav a[href="#stocks"]', 'text', 'All stocks'], ['#homeNav a[href="#compare"]', 'text', 'Compare'], ['#homeNav a[href="#events"]', 'text', 'Events'],
+  ['#detailNav', 'aria-label', 'Location'], ['#detailNav .back-l span', 'text', 'All stocks'],
+  ['#play', 'aria-label', 'Autoplay the story'], ['#playLbl', 'text', 'Autoplay'],
+  ['#searchBtn', 'aria-label', 'Search stocks'],
+  ['.hero h1', 'text', 'The story behind the stock chart'],
+  ['.hero .lead', 'text', 'Every surge and every crash has a cause. Pick a company and follow its stock chapter by chapter, along with the events that moved it.'],
+  ['.hero .btn', 'text', 'Choose a company'],
+  ['#cmpSeg', 'aria-label', 'Calculation'], ['[data-cmp="px"]', 'text', 'Price only'], ['[data-cmp="tr"]', 'text', 'With dividends'],
+  ['#cmpSvg', 'aria-label', 'Chart comparing the growth of the selected stocks'],
+  ['.drama h2', 'text', 'Most dramatic chapters'], ['.drama .seg', 'aria-label', 'Chapter type'],
+  ['[data-dr="bull"]', 'text', 'Rallies'], ['[data-dr="bear"]', 'text', 'Crashes'],
+  ['#saham .sechead h2', 'text', 'All stocks'], ['#saham .sechead p', 'text', 'Price gain since 2010, deepest fall, and the result against the market.'],
+  ['.filters', 'aria-label', 'Search and filter stocks'], ['.search .vh', 'text', 'Search stocks'],
+  ['#sLbl', 'text', 'Sort'], ['[data-sort="mult"]', 'text', 'Multiple'], ['[data-sort="worst"]', 'text', 'Deepest fall'], ['[data-sort="name"]', 'text', 'Name'],
+  ['#gLbl', 'text', 'Sector'], ['#grLbl', 'text', 'Price gain'], ['#fReset', 'text', 'Clear filters'],
+  ['#evHome .sechead h2', 'text', 'When markets were shaken'], ['#evHome .sechead p', 'text', 'Major events since 2010 and the stocks hit hardest.'], ['#evHome .linkbtn', 'text', 'See all events'],
+  ['#storySvg', 'aria-label', 'Price chart for the chapter being read'], ['.st-foot .seg', 'aria-label', 'Chart scale'],
+  ['#mFocus', 'text', 'Chapter focus'], ['#mAll', 'text', 'Full period'], ['#tocBtn', 'text', 'Chapters'],
+  ['#prev', 'aria-label', 'Previous chapter'], ['#next', 'aria-label', 'Next chapter'],
+  ['#epilog > .sechead h2', 'text', 'The full journey'], ['#epilog > .sechead p', 'text', 'Hover over or touch the chart to see the price on any date. Click a colored band to open its chapter.'],
+  ['#xLog', 'text', 'Logarithmic'], ['#xLin', 'text', 'Linear'], ['#xLog', 'parent-aria', 'Full chart scale'],
+  ['#exSvg', 'aria-label', 'Full price chart with chapter bands'], ['details.data summary', 'text', 'See the chapter data in a table'],
+  ['.duo .panel:first-child h3', 'text', 'What if you had bought?'], ['[data-cur="usd"]', 'parent-aria', 'Currency'],
+  ['#divLbl', 'text', 'Dividends'], ['[data-div="no"]', 'text', 'Not counted'], ['[data-div="yes"]', 'text', 'Reinvested'],
+  ['label[for="yr"]', 'html', 'Buy at the start of <output id="yrOut" for="yr">2010</output>'],
+  ['#rBuy + span', 'text', 'Purchase price per share'], ['#rMul + span', 'text', 'Multiple'], ['#rCagr + span', 'text', 'Per year'],
+  ['.duo .panel:last-child h3', 'text', 'Biggest crashes'],
+  ['.duo .panel:last-child .sub', 'text', 'Click to open the chapter. The recovery date is the approximate month when the price returned to its previous peak.'],
+  ['.more-h h2', 'text', 'More stories'],
+  ['#peristiwa-top h1', 'text', 'When markets were shaken'],
+  ['#peristiwa-top p', 'text', 'Major events since 2010 and how each stock reacted. Pick an event to see which stocks held up and which were hit hardest.'],
+  ['#evSvg', 'aria-label', 'S&P 500 since 2010 with each event period marked'], ['#evPick', 'aria-label', 'Choose an event'],
+  ['#evBarsH', 'text', 'Impact on each stock'],
+  ['#evBarsH + p', 'text', 'Price change over the event period, sorted from most resilient. Tap a stock to read its chapter.'],
+  ['.evnote', 'text', 'Changes run from the closing price on the first day to the closing price on the last day of the period, without dividends. “Recovery” means the price returned to its pre-event level, counted from the first day of the period; data through 31 December 2025.'],
+  ['#fSheetTitle', 'text', 'Filter stocks'], ['#fClose', 'aria-label', 'Close filters'], ['#fSheetReset', 'text', 'Clear filters'],
+  ['#tocTitle', 'text', 'Chapters'], ['#tocClose', 'aria-label', 'Close chapter list'],
+  ['#menuBtn', 'aria-label', 'Open menu'], ['#mMenuClose', 'aria-label', 'Close menu'], ['.mlinks', 'aria-label', 'Navigation'],
+  ['.mlinks [data-go="search"] span', 'text', 'Search stocks'], ['.mlinks a[href="#stocks"] span', 'text', 'All stocks'],
+  ['.mlinks a[href="#compare"] span', 'text', 'Compare'], ['.mlinks a[href="#events"] span', 'text', 'Events'],
+  ['#mLangLbl', 'text', 'Language'], ['#mThemeLbl', 'text', 'Appearance'], ['[data-th="light"]', 'text', 'Light'], ['[data-th="dark"]', 'text', 'Dark'],
+  ['footer p:nth-of-type(2)', 'text', 'This page is not investment advice. Past performance does not guarantee future results.'],
+  ['.credit > span:first-child', 'html', 'Made by <b>Bagas Prasetyadi</b>'],
+];
+if (EN) for (const [sel, kind, val] of STATIC_EN){
+  const el = document.querySelector(sel); if (!el) continue;
+  if (kind === 'text') el.textContent = val; else if (kind === 'html') el.innerHTML = val;
+  else if (kind === 'parent-aria') el.parentElement.setAttribute('aria-label', val); else el.setAttribute(kind, val);
+}
+// switches: both reload the page and keep the reading position
+const langBtn = $('langBtn');
+if (EN){ langBtn.textContent = 'ID'; langBtn.setAttribute('aria-label', 'Ganti ke Bahasa Indonesia'); langBtn.setAttribute('lang', 'id'); }
+langBtn.title = langBtn.getAttribute('aria-label');
+// reload with a short fade so switching market or language does not flash
+function fadeReload(label){
+  if (REDUCED){ location.reload(); return; }
+  try { sessionStorage.setItem('sj-fade', '1'); if (label) sessionStorage.setItem('sj-label', label); } catch (e) {}
+  const root = document.documentElement;
+  root.classList.remove('sj-ready'); root.classList.add('sj-out');
+  if (label){
+    root.querySelectorAll('.sj-veil').forEach(v => v.remove());
+    const v = document.createElement('div'); v.className = 'sj-veil'; v.setAttribute('aria-hidden', 'true'); v.innerHTML = `<span>${esc(label)}</span>`;
+    root.appendChild(v); void v.offsetWidth; v.classList.add('on');
+  }
+  setTimeout(() => location.reload(), label ? 360 : 130);
+}
+const mktLabel = m => m === 'id' ? L('Saham Indonesia', 'Indonesian stocks') : L('Saham AS', 'US stocks');
+const reloadKeeping = label => { try { sessionStorage.setItem('sj-restore', JSON.stringify({h: location.hash, y: scrollY})); } catch (e) {} fadeReload(label); };
+langBtn.addEventListener('click', () => window.__sjSwapLang(EN ? 'id' : 'en'));
+document.querySelectorAll('#mktSw button').forEach(b => {
+  b.setAttribute('aria-pressed', b.dataset.m === MKT);
+  b.addEventListener('click', () => {
+    if (b.dataset.m === MKT) return;
+    store.set('sj-mkt', b.dataset.m);
+    reloadKeeping(mktLabel(b.dataset.m));
+  });
+});
+// phones: navigation, search, language, and theme live in one menu sheet
+const mMenu = $('mMenu');
+const syncMenu = () => {
+  mMenu.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.lang === 'en') === EN));
+  mMenu.querySelectorAll('[data-th]').forEach(b => b.setAttribute('aria-pressed', b.dataset.th === document.documentElement.dataset.theme));
+};
+$('menuBtn').addEventListener('click', () => { syncMenu(); openModal(mMenu, $('mMenuClose')); });
+document.addEventListener('sj-theme', syncMenu); // the theme changes inside a view transition, so sync when it actually applies
+$('mMenuClose').addEventListener('click', () => mMenu.close());
+mMenu.addEventListener('click', e => {
+  if (e.target === mMenu){ mMenu.close(); return; }
+  const go = e.target.closest('[data-go]');
+  if (go){ mMenu.close(); if (go.dataset.go === 'search') focusSearch(); return; }
+  const lg = e.target.closest('[data-lang]');
+  if (lg && (lg.dataset.lang === 'en') !== EN){ window.__sjSwapLang(lg.dataset.lang, {menu: true}); return; }
+  const th = e.target.closest('[data-th]');
+  if (th && th.dataset.th !== document.documentElement.dataset.theme){ $('themeBtn').click(); }
+});
+
+// footer: data notes per market, written in general terms
+{
+  const F = {
+    us: [
+      'Data harga harian dan dividen dari Yahoo Finance, dalam dolar AS dan disesuaikan dengan stock split, hingga 31 Desember 2025. Pembanding pasar: S&P 500. Narasi disusun dari peristiwa publik dan dicocokkan dengan data harga. Logo dari Simple Icons dan Logo.dev; merek dagang milik masing-masing perusahaan.',
+      'Daily prices and dividends from Yahoo Finance, in US dollars and adjusted for stock splits, through 31 December 2025. Market benchmark: the S&P 500. The narrative is based on public events and checked against price data. Logos from Simple Icons and Logo.dev; trademarks belong to their owners.'],
+    id: [
+      'Data harga harian dan dividen dari Yahoo Finance, dalam rupiah dan disesuaikan dengan stock split, hingga 30 Desember 2025. Data telah dibersihkan dari hari libur bursa dan harga yang keliru. Pembanding pasar: IHSG, tanpa dividen. Narasi disusun dari peristiwa publik dan dicocokkan dengan data harga. Logo dari Simple Icons dan Logo.dev; merek dagang milik masing-masing perusahaan.',
+      'Daily prices and dividends from Yahoo Finance, in rupiah and adjusted for stock splits, through 30 December 2025. The data is cleaned of market holidays and erroneous prices. Market benchmark: the Jakarta Composite Index (JCI), without dividends. The narrative is based on public events and checked against price data. Logos from Simple Icons and Logo.dev; trademarks belong to their owners.']
+  };
+  $('footSrc').textContent = F[MKT][EN ? 1 : 0];
+}
+/* ================= HOME ================= */
+// KPI facts
+(() => {
+  const top = STOCKS.reduce((a, S) => S.mult > a.mult ? S : a);
+  const low = STOCKS.reduce((a, S) => S.mult < a.mult ? S : a);
+  const best = ALLCH.reduce((a, c) => c.pct > a.pct ? c : a);
+  const worst = ALLCH.reduce((a, c) => c.pct < a.pct ? c : a);
+  const items = [
+    {v: mult(top.mult), k:L('Kenaikan tertinggi', 'Biggest gain'), s: top.name, S: top, from: top.T0, to: top.T1, href:`#${top.id}`},
+    {v: pct(best.pct), k:L('Bab terkuat', 'Strongest chapter'), s: `${best.S.name}: ${best.title}`, S: best.S, from: best.st, to: best.et, href: chLink(best), ch: best},
+    {v: pct(worst.pct), k:L('Bab terburuk', 'Worst chapter'), s: `${worst.S.name}: ${worst.title}`, S: worst.S, from: worst.st, to: worst.et, href: chLink(worst), ch: worst},
+    {v: mult(low.mult), k:L('Kenaikan terendah', 'Smallest gain'), s: low.name, S: low, from: low.T0, to: low.T1, href:`#${low.id}`},
+  ];
+  $('homeKpis').innerHTML = items.map((it, i) => `<a class="kpi" href="${it.href}" data-ch="${it.ch ? it.ch.i : ''}"><span class="ic">${mono(it.S)}</span><span class="v">${it.v}</span><span class="k">${it.k}</span><span class="s">${esc(it.s)}</span>${bars(it.S, it.from, it.to)}</a>`).join('');
+  $('homeKpis').addEventListener('click', e => { const a = e.target.closest('a[data-ch]'); if (a && a.dataset.ch !== '') pendingCh = +a.dataset.ch; });
+})();
+
+// dramatic chapters
+function renderDrama(kind){
+  const list = [...ALLCH].filter(c => c.type === kind).sort((a, b) => kind === 'bull' ? b.pct - a.pct : a.pct - b.pct).slice(0, 6);
+  $('dramaList').innerHTML = list.map(c => `<li><a href="${chLink(c)}" data-ch="${c.i}">${mono(c.S)}<span style="min-width:0"><span class="t">${esc(c.title)}</span><span class="e">${esc(c.S.name)}, ${c.when}</span></span><span class="p c-${c.type}">${pct(c.pct)}</span></a></li>`).join('');
+  document.querySelectorAll('[data-dr]').forEach(b => b.setAttribute('aria-pressed', b.dataset.dr === kind));
+}
+document.querySelectorAll('[data-dr]').forEach(b => b.addEventListener('click', () => renderDrama(b.dataset.dr)));
+$('dramaList').addEventListener('click', e => { const a = e.target.closest('a[data-ch]'); if (a) pendingCh = +a.dataset.ch; });
+renderDrama('bull');
+
+// tiles
+function tileHTML(S){
+  const vals = S.D.map(d => d.v), l0 = Math.log10(Math.min(...vals)), l1 = Math.log10(Math.max(...vals));
+  const d = S.D.filter((_, k) => k % 4 === 0 || k === S.D.length-1).map((p, k) => (k ? 'L' : 'M') + ((p.t-S.T0)/(S.T1-S.T0)*120).toFixed(1) + ',' + (38 - 36*(Math.log10(p.v)-l0)/(l1-l0)).toFixed(1)).join('');
+  const y0 = new Date(S.T0).getUTCFullYear(), ratio = vsMkt(S);
+  const vs = ratio >= 1.05 ? [L(`${mult(ratio)} lebih baik`, `${mult(ratio)} better`), 'up'] : ratio <= .95 ? [L(`${num(ratio*100, 0)}% dari pasar`, `${num(ratio*100, 0)}% of market`), 'dn'] : [L('setara', 'on par'), ''];
+  return `<a class="tile" href="#${S.id}" data-id="${S.id}" aria-label="${esc(S.name)}: ${L(`harga naik ${mult(S.mult)} sejak ${y0}, turun terdalam ${pct(S.worst)}. Baca kisahnya.`, `price up ${mult(S.mult)} since ${y0}, deepest fall ${pct(S.worst)}. Read the story.`)}" style="--sc:${S.b}">
+    <span class="hd">${mono(S)}<span class="id"><span class="nm">${esc(S.name)}</span><span class="sub">${S.tk}${isID(S) ? L(' · BEI', ' · IDX') : ''}<span class="sec"> · ${esc(S.sector)}</span></span></span></span>
+    <span class="mid"><span><span class="m">${mult(S.mult)}</span><span class="ml">${L('harga sejak', 'price since')} ${y0}</span></span>
+      <svg class="sp" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" vector-effect="non-scaling-stroke"/></svg></span>
+    <dl><div><dt>${L('Turun terdalam', 'Deepest fall')}</dt><dd class="dn">${pct(S.worst)}</dd></div><div class="vs"><dt>vs ${mkName(S).replace('&', '&amp;')}</dt><dd class="${vs[1]}">${vs[0]}</dd></div></dl></a>`;
+}
+const tilesEl = $('tiles');
+tilesEl.innerHTML = STOCKS.map(S => tileHTML(S)).join('') + `<div class="empty" id="empty" hidden><p>${L('Tidak ada saham yang cocok dengan pencarian dan filter ini.', 'No stocks match this search and these filters.')}</p><button type="button" class="btn" id="emptyReset">${L('Hapus semua filter', 'Clear all filters')}</button></div>`;
+
+// filters
+const GROUPS = ['Teknologi','Komunikasi & media','Konsumen','Keuangan','Kesehatan','Energi','Bahan baku','Industri'];
+const GROWTH = [{id:'all', label:L('Semua', 'All')}, {id:'big', label:L('Di atas 10×', 'Over 10×')}, {id:'mid', label:'2–10×'}, {id:'low', label:L('Di bawah 2×', 'Under 2×')}];
+const F = {q:'', group:'all', growth:'all', sort:'mult'};
+const SORTS = {mult:(a,b) => b.mult-a.mult, worst:(a,b) => a.worst-b.worst, name:(a,b) => a.name.localeCompare(b.name)};
+$('fGroup').innerHTML = [['all',L('Semua sektor', 'All sectors'),STOCKS.length], ...GROUPS.map(g => [g, gname(g), STOCKS.filter(S => S.group === g).length])]
+  .filter(([,,n]) => n).map(([v,l,n]) => `<button type="button" class="pill" data-v="${esc(v)}" aria-pressed="${v === 'all'}">${esc(l)} <span class="n">${n}</span></button>`).join('');
+$('fGrowth').innerHTML = GROWTH.map(g => `<button type="button" data-v="${g.id}" aria-pressed="${g.id === 'all'}">${g.label}</button>`).join('');
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function matches(S){
+  const q = norm(F.q.trim());
+  if (q && ![S.tk, S.name, S.sector, S.group, gname(S.group)].some(v => norm(v).includes(q))) return false;
+  if (F.group !== 'all' && S.group !== F.group) return false;
+  return F.growth === 'all' || S.growth === F.growth;
+}
+const TILE_STEP = 24;
+let tileLimit = TILE_STEP;
+function applyFilters(animateSort){
+  const els = [...tilesEl.querySelectorAll('.tile')], first = animateSort ? new Map(els.map(e => [e, e.getBoundingClientRect()])) : null;
+  [...STOCKS].sort(SORTS[F.sort]).forEach(S => tilesEl.insertBefore(tilesEl.querySelector(`[data-id="${S.id}"]`), $('empty')));
+  // show the first TILE_STEP matches; the rest wait behind "Show more"
+  let n = 0;
+  [...STOCKS].sort(SORTS[F.sort]).forEach(S => { const ok = matches(S); if (ok) n++; tilesEl.querySelector(`[data-id="${S.id}"]`).hidden = !ok || n > tileLimit; });
+  const left = n - tileLimit;
+  $('tilesMore').hidden = left <= 0;
+  if (left > 0) $('tilesMore').textContent = L(`Tampilkan ${Math.min(left, TILE_STEP)} saham lagi`, `Show ${Math.min(left, TILE_STEP)} more stocks`);
+  $('empty').hidden = n > 0;
+  const active = F.q.trim() || F.group !== 'all' || F.growth !== 'all';
+  $('fCount').textContent = active ? L(`Menampilkan ${n} dari ${STOCKS.length} saham`, `Showing ${n} of ${STOCKS.length} stocks`) : L(`${STOCKS.length} saham`, `${STOCKS.length} stocks`);
+  $('fReset').hidden = !active;
+  const nAdv = (F.group !== 'all') + (F.growth !== 'all');
+  $('fBadge').hidden = !nAdv; $('fBadge').textContent = nAdv;
+  $('fApply').textContent = n ? L(`Tampilkan ${n} saham`, `Show ${n} stocks`) : L('Tidak ada yang cocok', 'No matches');
+  const X = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const chips = [];
+  if (F.q.trim()) chips.push(`<button type="button" class="achip" data-clear="q" aria-label="${L('Hapus pencarian', 'Clear search')} ${esc(F.q.trim())}">“${esc(F.q.trim())}”${X}</button>`);
+  if (F.group !== 'all') chips.push(`<button type="button" class="achip" data-clear="group" aria-label="${L('Hapus filter sektor', 'Clear sector filter')} ${esc(gname(F.group))}">${esc(gname(F.group))}${X}</button>`);
+  if (F.growth !== 'all') chips.push(`<button type="button" class="achip" data-clear="growth" aria-label="${L('Hapus filter kenaikan', 'Clear growth filter')} ${GROWTH.find(g => g.id === F.growth).label}">${GROWTH.find(g => g.id === F.growth).label}${X}</button>`);
+  $('fChips').innerHTML = chips.join('');
+  document.querySelectorAll('#fGroup .pill').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === F.group));
+  document.querySelectorAll('#fGrowth button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === F.growth));
+  document.querySelectorAll('[data-sort]').forEach(b => b.setAttribute('aria-pressed', b.dataset.sort === F.sort));
+  if (!first || REDUCED) return;
+  els.forEach(e => { if (e.hidden) return; const a = first.get(e), b = e.getBoundingClientRect(), dx = a.left-b.left, dy = a.top-b.top;
+    if (!dx && !dy) return;
+    e.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}], {duration:320, easing:'cubic-bezier(.2,.8,.2,1)'}); });
+}
+$('fSearch').addEventListener('input', e => { F.q = e.target.value; tileLimit = TILE_STEP; applyFilters(); });
+$('tilesMore').addEventListener('click', () => { const was = tileLimit; tileLimit += TILE_STEP; applyFilters(); const t = [...tilesEl.querySelectorAll('.tile:not([hidden])')][was]; if (t) t.querySelector('a, button')?.focus({preventScroll: true}); });
+$('fGroup').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; F.group = b.dataset.v; tileLimit = TILE_STEP; applyFilters(); });
+$('fGrowth').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; F.growth = b.dataset.v; tileLimit = TILE_STEP; applyFilters(); });
+document.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => { F.sort = b.dataset.sort; applyFilters(true); }));
+function resetFilters(){ F.q = ''; F.group = 'all'; F.growth = 'all'; $('fSearch').value = ''; tileLimit = TILE_STEP; applyFilters(); }
+$('fReset').addEventListener('click', resetFilters);
+$('fChips').addEventListener('click', e => { const b = e.target.closest('[data-clear]'); if (!b) return;
+  const k = b.dataset.clear; if (k === 'q'){ F.q = ''; $('fSearch').value = ''; } else F[k] = 'all'; applyFilters(); });
+// phones: the advanced filters live in a bottom sheet (same controls, moved in and out)
+const sheet = $('fSheet'), adv = $('fAdv'), advHome = adv.parentElement, advNext = adv.nextElementSibling;
+let sheetY = 0;
+$('fOpen').addEventListener('click', () => { sheetY = scrollY; $('fSheetBody').appendChild(adv); openModal(sheet, $('fClose')); });
+sheet.addEventListener('close', () => { advHome.insertBefore(adv, advNext); window.scrollTo(0, sheetY); $('fOpen').focus({preventScroll:true}); });
+$('fClose').addEventListener('click', () => sheet.close());
+$('fSheetReset').addEventListener('click', () => { F.group = 'all'; F.growth = 'all'; F.sort = 'mult'; applyFilters(true); });
+$('fApply').addEventListener('click', () => {
+  sheet.close();
+  // bring the first result just below the sticky search bar
+  const f = document.querySelector('.filters'), stick = parseFloat(getComputedStyle(f).top) + f.offsetHeight + 8;
+  window.scrollTo({top: Math.max(0, scrollY + $('tiles').getBoundingClientRect().top - stick), behavior: REDUCED ? 'auto' : 'smooth'});
+});
+sheet.addEventListener('click', e => { if (e.target === sheet) sheet.close(); });
+
+$('emptyReset').addEventListener('click', () => { resetFilters(); $('fSearch').focus(); });
+function focusSearch(){
+  if (S || document.documentElement.classList.contains('is-events')){ location.hash = 'stocks'; setTimeout(focusSearch, 500); return; }
+  $('saham').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth', block:'start'});
+  setTimeout(() => $('fSearch').focus({preventScroll:true}), REDUCED ? 0 : 450);
+}
+$('searchBtn').addEventListener('click', focusSearch);
+document.addEventListener('keydown', e => { if (e.key === '/' && !S && !document.documentElement.classList.contains('is-events') && !e.target.closest('input,textarea,dialog')){ e.preventDefault(); focusSearch(); } });
+applyFilters();
+const setPh = () => { $('fSearch').placeholder = isNarrow() ? L('Cari saham', 'Search stocks') : L('Cari nama, kode, atau sektor', 'Search name, ticker, or sector'); };
+setPh(); addEventListener('resize', setPh);
+
+// comparison chart: every stock as faint context, up to four highlighted
+(() => {
+  // US: $1 against the S&P 500; Indonesia: Rp1 million against the JCI (price only, no total-return index)
+  const USS = STOCKS, IDM = MKT === 'id';
+  const svg = $('cmpSvg'), box = $('cmpBox'), tip = $('cmpTip'), chips = $('chips'), MAX = 4;
+  let W = 0, H = 0, pad, seen = false, drawn = false;
+  const picked = new Map(IDM ? [['bbca',1],['bbri',2],['tlkm',3],['asii',4]] : [['nvda',1],['aapl',2],['ko',3],['intc',4]]);
+  const MARKET = IDM ? [['2013-05-20','2013-08-27','Taper 2013'],['2015-04-07','2015-09-28','2015'],['2020-01-17','2020-03-24',L('Pandemi', 'Pandemic')]]
+    : [['2018-10-01','2018-12-24',L('Akhir 2018', 'Late 2018')],['2020-02-19','2020-03-23',L('Pandemi', 'Pandemic')],['2022-01-03','2022-10-14','2022']];
+  const L0 = Math.log10(IDM ? .07 : .35), L1 = Math.log10(IDM ? 1100 : 700);
+  const unit = v => IDM ? L(`Rp${num(v, v < 1 ? 1 : v < 10 && v % 1 ? 1 : 0)} jt`, `Rp${num(v, v < 1 ? 1 : v < 10 && v % 1 ? 1 : 0)}M`) : '$' + num(v, v < 1 ? 1 : 0);
+  const unitTip = v => IDM ? L(`Rp${num(v, 2)} jt`, `Rp${num(v, 2)}M`) : '$' + num(v, v < 10 ? 2 : 0);
+  const MKS = cmpTR => IDM ? MK.jk : cmpTR ? MK.tr : MK.px;
+  $('cmpH').textContent = IDM ? L('Ke mana Rp1 juta pergi', 'Where Rp1 million went') : L('Ke mana $1 pergi', 'Where $1 went');
+  $('cmpSeg').hidden = IDM;
+  $('cmpNote').textContent = IDM
+    ? L('Saham Indonesia, dalam rupiah. Pilih hingga 4 saham. Garis putus-putus adalah IHSG sebagai pembanding pasar. Nilai Rp1 juta yang dibeli di awal 2010 atau sejak data tersedia, tanpa dividen karena IHSG tidak memasukkan dividen. Skala logaritmik; area berarsir menandai kejatuhan pasar.',
+        'Indonesian stocks, in rupiah. Pick up to 4 stocks. The dashed line is the JCI (Jakarta Composite Index) as the market benchmark. Value of Rp1 million invested at the start of 2010 or when data begins, without dividends because the JCI excludes them. Log scale; shaded areas mark market crashes.')
+    : L('Saham AS, dalam dolar. Pilih hingga 4 saham. Garis putus-putus adalah S&P 500 sebagai pembanding pasar. Nilai $1 yang dibeli di awal 2010, atau saat melantai untuk Tesla, Meta, dan Palantir. "Dengan dividen" berarti dividen diinvestasikan kembali. Skala logaritmik; area berarsir menandai kejatuhan pasar.',
+        'US stocks, in dollars. Pick up to 4 stocks. The dashed line is the S&P 500 as the market benchmark. Value of $1 invested at the start of 2010, or at listing for Tesla, Meta, and Palantir. "With dividends" means dividends are reinvested. Log scale; shaded areas mark market crashes.');
+  const X = t => pad.l + (t-GT0)/(GT1-GT0)*(W-pad.l-pad.r);
+  const Y = v => pad.t + (1-(Math.log10(v)-L0)/(L1-L0))*(H-pad.t-pad.b);
+  const col = id => `var(--s${picked.get(id)})`;
+  let cmpTR = false;
+  const ser = S => cmpTR && S.TR.length ? S.TR : S.D;
+  document.querySelectorAll('[data-cmp]').forEach(b => b.addEventListener('click', () => { cmpTR = b.dataset.cmp === 'tr'; document.querySelectorAll('[data-cmp]').forEach(x => x.setAttribute('aria-pressed', x === b)); render(true); }));
+  // picker: the chart shows only the chosen stocks as chips; everything else lives in a searchable dialog
+  const XI = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const PRESETS = IDM
+    ? [[L('Bank besar', 'Big banks'), ['bbca','bbri','bmri','bbni']], [L('Grup Prajogo', 'Prajogo group'), ['brpt','tpia','bren','cuan']], [L('Batu bara', 'Coal'), ['byan','ptba','itmg','untr']], [L('Konsumen', 'Consumer'), ['icbp','unvr','indf','myor']], [L('Telekomunikasi', 'Telecom'), ['tlkm','isat','excl','towr']]]
+    : [[L('Chip AI', 'AI chips'), ['nvda','amd','avgo','intc']], [L('Raksasa teknologi', 'Big tech'), ['aapl','msft','googl','amzn']], [L('Defensif', 'Defensive'), ['ko','pg','pep','wmt']], [L('Bank', 'Banks'), ['jpm','bac','wfc','gs']], [L('Minyak & farmasi', 'Oil & pharma'), ['xom','cvx','lly','jnj']]];
+  const pick = $('cmpPick'), list = $('cmpList'), q = $('cmpQ');
+  q.placeholder = L('Cari nama atau kode saham', 'Search name or ticker');
+  q.setAttribute('aria-label', q.placeholder);
+  $('cmpPickTitle').textContent = L('Pilih saham', 'Choose stocks');
+  $('cmpPresetsLbl').textContent = L('Pilihan cepat', 'Quick picks');
+  $('cmpDone').textContent = L('Selesai', 'Done');
+  $('cmpPickClose').setAttribute('aria-label', L('Tutup', 'Close'));
+  const okPreset = ids => ids.filter(id => USS.some(S => S.id === id));
+  $('cmpPresets').innerHTML = PRESETS.map(([l, ids], k) => okPreset(ids).length ? `<button type="button" class="pill" data-preset="${k}">${l}</button>` : '').join('');
+  list.innerHTML = GROUPS.map(g => { const ss = USS.filter(S => S.group === g); if (!ss.length) return '';
+    return `<div class="pgroup" data-g="${esc(g)}"><h3>${esc(gname(g))}</h3><div class="ppills">${ss.map(S => `<button type="button" class="pill" data-id="${S.id}" data-q="${esc((S.tk + ' ' + S.name).toLowerCase())}" aria-pressed="false"><i></i>${S.tk}<span class="nm">${esc(S.name)}</span></button>`).join('')}</div></div>`; }).join('');
+  const setPicked = ids => { picked.clear(); ids.forEach((id, k) => picked.set(id, k + 1)); };
+  function toggle(id){
+    if (picked.has(id)){ picked.delete(id); return true; }
+    if (picked.size >= MAX) return false;
+    const used = new Set(picked.values()); let s = 1; while (used.has(s)) s++; picked.set(id, s); return true;
+  }
+  function syncPicker(){
+    list.querySelectorAll('.pill').forEach(b => { const on = picked.has(b.dataset.id); b.setAttribute('aria-pressed', on); b.firstChild.style.background = on ? col(b.dataset.id) : ''; b.setAttribute('aria-disabled', !on && picked.size >= MAX); });
+    $('cmpCount').textContent = L(`${picked.size} dari ${MAX} dipilih`, `${picked.size} of ${MAX} selected`);
+  }
+  function drawChips(){
+    const sel = USS.filter(S => picked.has(S.id)).sort((a, b) => picked.get(a.id) - picked.get(b.id));
+    chips.innerHTML = sel.map(S => `<button type="button" class="pill sel" data-id="${S.id}" aria-label="${L('Hapus', 'Remove')} ${S.tk}"><i style="background:${col(S.id)}"></i>${S.tk}<span class="x">${XI}</span></button>`).join('')
+      + `<button type="button" class="pill add" id="cmpAdd" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>${picked.size >= MAX ? L('Ganti saham', 'Change stocks') : L('Tambah saham', 'Add stock')}</button>`;
+  }
+  chips.addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    if (b.id === 'cmpAdd'){ q.value = ''; filterList(); syncPicker(); pick.showModal(); if (!isNarrow()) q.focus(); return; }
+    picked.delete(b.dataset.id); $('cmpMsg').textContent = ''; render(true);
+    $('cmpAdd')?.focus();
+  });
+  list.addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    if (!toggle(b.dataset.id)){ $('cmpCount').textContent = L(`Maksimal ${MAX} saham. Hapus salah satu dulu.`, `Up to ${MAX} stocks. Remove one first.`); return; }
+    render(true);
+  });
+  $('cmpPresets').addEventListener('click', e => { const b = e.target.closest('[data-preset]'); if (!b) return; setPicked(okPreset(PRESETS[+b.dataset.preset][1])); render(true); });
+  function filterList(){
+    const t = q.value.trim().toLowerCase(); let n = 0;
+    list.querySelectorAll('.pgroup').forEach(gr => { let k = 0; gr.querySelectorAll('.pill').forEach(b => { const ok = !t || b.dataset.q.includes(t); b.hidden = !ok; if (ok) k++; }); gr.hidden = !k; n += k; });
+    $('cmpPresetsWrap').hidden = !!t;
+    $('cmpEmpty').hidden = n > 0; $('cmpEmpty').textContent = L('Tidak ada saham yang cocok.', 'No matching stocks.');
+  }
+  q.addEventListener('input', filterList);
+  $('cmpDone').addEventListener('click', () => pick.close());
+  $('cmpPickClose').addEventListener('click', () => pick.close());
+  pick.addEventListener('click', e => { if (e.target === pick) pick.close(); });
+  pick.addEventListener('close', () => $('cmpAdd')?.focus());
+  drawChips();
+  function render(force){
+    const r = box.getBoundingClientRect(); if (!r.width || !r.height) return;
+    if (!force && r.width === W && r.height === H && svg.childElementCount) return;
+    W = r.width; H = r.height;
+    const narrow = W < 520;
+    pad = {l: (narrow ? 36 : 48) + (IDM ? 16 : 0), r: narrow ? 92 : 98, t: 22, b: 28};
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    // band labels: a label that would collide with the previous one moves up to a second row
+    const bands = MARKET.map(([a, b, l]) => { const xa = X(ts(a)), xb = X(ts(b)), w = l.length*7 + 8; return {xa, xb, l, x0: (xa+xb)/2 - w/2, x1: (xa+xb)/2 + w/2, row: 0}; });
+    if (!narrow) for (let k = 1; k < bands.length; k++) if (bands[k-1].row === 0 && bands[k].x0 < bands[k-1].x1) bands[k].row = 1;
+    if (bands.some(bd => bd.row)) pad.t = 38;
+    let g = '<g class="mkt">';
+    for (const bd of bands){ g += `<rect x="${bd.xa}" y="${pad.t-8}" width="${Math.max(3, bd.xb-bd.xa)}" height="${H-pad.b-pad.t+8}" rx="3"/>${narrow ? '' : `<text x="${(bd.xa+bd.xb)/2}" y="${pad.t-12-bd.row*15}" text-anchor="middle">${bd.l}</text>`}`; }
+    g += '</g><g class="grid">';
+    for (const v of (IDM ? (narrow ? [.1,1,10,100,1000] : [.1,.3,1,3,10,30,100,300,1000]) : narrow ? [1,10,100] : [.5,1,2,5,10,20,50,100,200,500])){ const y = Y(v);
+      g += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}"/><text class="ax" x="${pad.l-8}" y="${y+4}" text-anchor="end">${unit(v)}</text>`; }
+    for (let y = 2010; y <= 2025; y += (W < 600 ? 5 : 3)){ const x = X(Date.UTC(y,0,1)); g += `<text class="ax" x="${x}" y="${H-8}" text-anchor="middle">${y}</text>`; }
+    g += '</g>';
+    const path = S => { const D = ser(S), v0 = D[0].v; return D.map((p,k) => (k ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.v/v0).toFixed(1)).join(''); };
+    const endMult = S => { const D = ser(S); return D[D.length-1].v / D[0].v; };
+    const mk = MKS(cmpTR), mk0 = mk.length ? mk[0].v : 1, mkEnd = mk.length ? mk[mk.length-1].v/mk0 : 1;
+    const mkPath = mk.map((p,k) => (k ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.v/mk0).toFixed(1)).join('');
+    const anim = !drawn && seen && !REDUCED && !QUIET;
+    let ctx = '', hot = '', i = 0;
+    USS.forEach(S => { if (!picked.has(S.id)) ctx += `<path class="cl ctx" d="${path(S)}"/>`; });
+    USS.forEach(S => { if (picked.has(S.id)) hot += `<path class="cl${anim ? ' draw' : ''}" pathLength="1" d="${path(S)}" style="stroke:${col(S.id)};animation-delay:${(i++*.1).toFixed(2)}s"/>`; });
+    const labs = USS.filter(S => picked.has(S.id)).map(S => ({S, y: Y(endMult(S)), m: endMult(S)})).concat(mk.length ? [{mk:true, y: Y(mkEnd), m: mkEnd}] : []).sort((a,b) => a.y-b.y);
+    for (let k = 1; k < labs.length; k++) if (labs[k].y - labs[k-1].y < 17) labs[k].y = labs[k-1].y + 17;
+    let el = '';
+    for (const lb of labs){ const x = X(GT1);
+      if (lb.mk){ el += `<text class="endlab" x="${x+10}" y="${lb.y+4}"><tspan>${IDM ? L('IHSG', 'JCI') : 'S&amp;P'}</tspan><tspan class="v" dx="5">${mult(lb.m)}</tspan></text>`; continue; }
+      el += `<circle cx="${x}" cy="${Y(lb.m)}" r="4" style="fill:${col(lb.S.id)};stroke:var(--panel-solid);stroke-width:2"/><text class="endlab" x="${x+10}" y="${lb.y+4}"><tspan>${lb.S.tk}</tspan><tspan class="v" dx="5">${mult(lb.m)}</tspan></text>`; }
+    const mkLine = mk.length ? `<path d="${mkPath}" fill="none" style="stroke:var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" opacity=".7"/>` : '';
+    svg.innerHTML = g + ctx + mkLine + hot + el + `<g id="cmpHov" style="display:none"><line class="cross" y1="${pad.t}" y2="${H-pad.b}"/></g>` +
+      USS.filter(S => picked.has(S.id)).map(S => `<circle class="hd" data-id="${S.id}" r="4" style="display:none;fill:${col(S.id)};stroke:var(--panel-solid);stroke-width:2"/>`).join('');
+    if (anim) drawn = true;
+    drawChips(); if (pick.open) syncPicker();
+  }
+  function move(ev){
+    if (!pad) return;
+    const r = svg.getBoundingClientRect(), px = ev.clientX - r.left;
+    if (px < pad.l || px > W-pad.r || !picked.size){ leave(); return; }
+    const t = GT0 + (px-pad.l)/(W-pad.l-pad.r)*(GT1-GT0);
+    const hov = svg.querySelector('#cmpHov'); hov.style.display = ''; const ln = hov.firstChild; ln.setAttribute('x1', px); ln.setAttribute('x2', px);
+    const rows = [];
+    USS.filter(S => picked.has(S.id)).forEach(S => { const c = svg.querySelector(`circle.hd[data-id="${S.id}"]`);
+      if (t < S.T0){ c.style.display = 'none'; rows.push({S, v:null}); return; }
+      const D = ser(S), v = (D === S.D ? S.val(t) : S.trAt(t)) / D[0].v; c.style.display = ''; c.setAttribute('cx', px); c.setAttribute('cy', Y(v)); rows.push({S, v}); });
+    rows.sort((a,b) => (b.v ?? -1) - (a.v ?? -1));
+    const mkS = MKS(cmpTR); const mkV = mkS.length ? interp(mkS, t)/mkS[0].v : null;
+    tip.innerHTML = `<div class="sub">${fmon(t)}: ${L('nilai', 'value of')} ${IDM ? L('Rp1 juta', 'Rp1M') : '$1'}</div>` + rows.map(({S,v}) => `<div class="row"><span><i style="background:${col(S.id)}"></i>${S.tk}</span><span>${v == null ? L('belum IPO', 'not listed') : unitTip(v)}</span></div>`).join('') + (mkV ? `<div class="row sub"><span>${IDM ? L('IHSG', 'JCI') : 'S&amp;P 500'}</span><span>${unitTip(mkV)}</span></div>` : '');
+    const tw = tip.offsetWidth; let lx = px + 16; if (lx + tw > W) lx = px - tw - 16;
+    tip.style.left = Math.max(0, lx) + 'px'; tip.style.top = pad.t + 'px'; tip.style.opacity = 1;
+  }
+  function leave(){ const h = svg.querySelector('#cmpHov'); if (h) h.style.display = 'none'; svg.querySelectorAll('circle.hd').forEach(c => c.style.display = 'none'); tip.style.opacity = 0; }
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move); svg.addEventListener('pointerleave', leave);
+  render();
+  new ResizeObserver(() => render()).observe(box);
+  new IntersectionObserver((es, o) => es.forEach(e => { if (e.isIntersecting){ seen = true; render(true); o.disconnect(); } }), {threshold:.3}).observe(box);
+})();
+
+/* ================= DETAIL ================= */
+const story = new StockChart($('storySvg'));
+const ex = new StockChart($('exSvg'), {bands:true});
+let S = null, mode = 'focus', active = -1, steps = [], strips = [], pendingCh = null;
+const titleEl = $('chTitle'), priceEl = $('price'), pillEl = $('pill'), counterEl = $('counter');
+story.onFrame = v => { priceEl.textContent = px(S, v); };
+function swap(el){ if (REDUCED) return; el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
+// numbers count up from zero the first time they scroll into view, keeping their own format (prefix, decimals, suffix)
+const DEC = (1.5).toLocaleString(LOC).charAt(1), GRP = DEC === ',' ? '.' : ',';
+function countUp(el){
+  const txt = el.textContent, m = txt.match(/\d[\d.,]*\d|\d/);
+  if (!m) return;
+  const raw = m[0], di = raw.lastIndexOf(DEC), dec = di >= 0 && raw.length - di - 1 !== 3 ? raw.length - di - 1 : 0;
+  const target = parseFloat(raw.split(GRP).join('').replace(DEC, '.'));
+  if (!isFinite(target) || target === 0) return;
+  const pre = txt.slice(0, m.index), post = txt.slice(m.index + raw.length), t0 = performance.now(), dur = 1100;
+  const step = now => {
+    const k = Math.min(1, (now - t0)/dur), e = 1 - Math.pow(1 - k, 4);
+    el.textContent = k < 1 ? pre + (target*e).toLocaleString(LOC, {minimumFractionDigits: dec, maximumFractionDigits: dec}) + post : txt;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+const countIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ countIO.unobserve(e.target); countUp(e.target); } }), {threshold: .6}) : null;
+function countIn(els){ if (REDUCED || QUIET || !countIO) return; els.forEach(el => countIO.observe(el)); }
+
+function targetFor(i){
+  const c = S.ch[i];
+  if (mode === 'all'){
+    const mn = Math.min(...S.D.map(d => d.v)), mx = Math.max(...S.D.map(d => d.v)), lr = Math.log10(mx/mn);
+    return {x0:S.T0 - 40*DAY, x1:S.T1 + 60*DAY, y0:0, y1:mx*1.15, l0:Math.log10(mn) - lr*.06, l1:Math.log10(mx) + lr*.1, m:1, rev:c.et, h0:c.st, h1:c.et};
+  }
+  const span = c.et - c.st, x0 = Math.max(S.T0, c.st - span*.3), x1 = c.et + span*.12;
+  let mn = Math.min(S.val(x0), c.to), mx = Math.max(S.val(x0), c.to);
+  for (const d of S.D) if (d.t >= x0 && d.t <= c.et){ mn = Math.min(mn, d.v); mx = Math.max(mx, d.v); }
+  const r = mx - mn, lr = Math.log10(mx) - Math.log10(mn);
+  return {x0, x1, y0:Math.max(0, mn - r*.16), y1:mx + r*.32, l0:Math.log10(mn) - lr*.16 - .02, l1:Math.log10(mx) + lr*.32 + .02, m:0, rev:c.et, h0:c.st, h1:c.et};
+}
+let navSource = 'scroll';
+function setActive(i, force){
+  if (!S || (i === active && !force)) return;
+  const back = i < active; active = i;
+  const c = S.ch[i];
+  steps.forEach((s,k) => s.classList.toggle('on', k === i));
+  strips.forEach((d,k) => { d.className = S.ch[k].type + (k === i ? ' on' : k < i ? ' seen' : ''); d.setAttribute('aria-current', k === i ? 'step' : 'false'); });
+  titleEl.textContent = c.title;
+  counterEl.textContent = L(`Bab ${i+1} dari ${S.ch.length} · ${c.when}`, `Chapter ${i+1} of ${S.ch.length} · ${c.when}`);
+  pillEl.className = 'tag ' + c.type; pillEl.innerHTML = `<i></i>${pct(c.pct)}`;
+  swap(titleEl);
+  document.documentElement.style.setProperty('--au1', c.type === 'bull' ? '#7fd1a6' : c.type === 'bear' ? '#f3a08f' : '#b9c3e6');
+  story.type = c.type; story.events = c.events;
+  const dur = force ? 0 : navSource === 'key' ? 300 : isNarrow() ? (back ? 450 : 650) : back ? 550 : 850;
+  navSource = 'scroll';
+  story.animate(targetFor(i), dur);
+}
+// the reading line: centre of the viewport, or the middle of the free area below the pinned chart on phones
+function readingLine(){
+  const vh = innerHeight;
+  if (!isNarrow()) return vh * .5;
+  const sb = document.querySelector('.stage').getBoundingClientRect().bottom;
+  return sb + (vh - sb) * .35;
+}
+// the active chapter is the card that sits on the reading line (or the nearest card when the line falls in a gap)
+let lock = null;
+function pickActive(){
+  if (!S || !steps.length || $('viewDetail').hidden) return;
+  if (lock){ if (performance.now() < lock.until) return; const t = lock.i; lock = null; setActive(t); return; }
+  const line = readingLine();
+  let best = -1, bestD = Infinity;
+  steps.forEach((st, i) => {
+    const r = st.firstElementChild.getBoundingClientRect();
+    const d = line < r.top ? r.top - line : line > r.bottom ? line - r.bottom : 0;
+    if (d < bestD){ bestD = d; best = i; }
+  });
+  if (best >= 0) setActive(best);
+}
+let pickT = 0, pickQueued = false;
+const schedulePick = () => {
+  if (!pickQueued){ pickQueued = true; requestAnimationFrame(() => { pickQueued = false; pickActive(); }); }
+  clearTimeout(pickT); pickT = setTimeout(pickActive, 150);
+};
+addEventListener('scroll', schedulePick, {passive:true});
+addEventListener('resize', schedulePick);
+function goTo(i, src = 'click'){
+  if (!S) return;
+  i = Math.max(0, Math.min(S.ch.length-1, i));
+  navSource = src === 'key' ? 'key' : 'scroll';
+  const smooth = !REDUCED && src !== 'key';
+  const card = steps[i].firstElementChild, r = card.getBoundingClientRect();
+  let top;
+  if (isNarrow()){
+    // where the pinned chart ends once it is stuck to the top bar
+    const st = document.querySelector('.stage'), sb = parseFloat(getComputedStyle(st).top) + st.offsetHeight;
+    top = scrollY + r.top - sb - 12;
+  } else {
+    top = scrollY + r.top - Math.max(innerHeight*.08 + 68, (innerHeight - r.height)/2);
+  }
+  // jump the chart straight to the target instead of flicking through every chapter on the way
+  setActive(i);
+  lock = {i, until: performance.now() + (smooth ? 900 : 0)};
+  window.scrollTo({top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto'});
+  setTimeout(schedulePick, smooth ? 950 : 30);
+}
+function recovery(c){
+  for (let t = c.et; t <= S.T1; t += 7*DAY) if (S.val(t) >= c.from*0.999) return L('Pulih ', 'Recovered ') + fmon(t);
+  return L('Belum pulih', 'Not recovered');
+}
+const LESSON_ICONS = [
+  '<path d="M3 14l4-4 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  '<circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 6.5V10l2.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  '<path d="M10 3l7 12H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v3.5M10 13.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+];
+
+function renderDetail(){
+  document.documentElement.style.setProperty('--acc', S.b);
+  document.documentElement.style.setProperty('--au2', `color-mix(in srgb, ${S.b} 70%, #ffffff)`);
+  $('crumbMono').outerHTML = mono(S).replace('<span class="mono ', '<span id="crumbMono" class="mono ');
+  $('crumbName').textContent = S.tk;
+  const y0s = new Date(S.T0).getUTCFullYear(), startLbl = S.T0 <= ts('2010-01-31') ? L('awal 2010', 'start of 2010') : S.lateStart ? L(`awal ${y0s}`, `start of ${y0s}`) : L(`penutupan perdana ${y0s}`, `first close ${y0s}`);
+  $('dHead').innerHTML = `
+    <div class="row1">
+      <div class="idrow">${mono(S, 'lg')}<div><h1>${esc(S.name)}</h1><div class="meta">${S.ex}: ${S.tk} · ${esc(gname(S.group))}, ${esc(S.sector.toLowerCase())}</div></div></div>
+      <div class="phead acts" style="padding:0"><button class="btn dark" type="button" id="startBtn">${L('Mulai membaca', 'Start reading')}</button></div>
+    </div>
+    <p class="lead">${esc(S.lead)} ${L(`Dari ${pxShort(S, S.start)} ke ${pxShort(S, S.end)} dalam ${S.ch.length} bab.`, `From ${pxShort(S, S.start)} to ${pxShort(S, S.end)} in ${S.ch.length} chapters.`)}</p>
+    <p class="split">${esc(S.split)}</p>`;
+  $('startBtn').addEventListener('click', () => goTo(0));
+  const kp = [
+    {v: pxShort(S, S.end), k: L('Harga akhir 2025', 'Price at end of 2025'), s: `${L('dari', 'from')} ${px(S, S.start)} (${startLbl})`, from: S.T1 - 60*DAY, to: S.T1},
+    {v: mult(S.mult), k: L('Kelipatan harga', 'Price multiple'), s: S.trMult && S.trMult/S.mult > 1.01 ? `${mult(S.trMult)} ${L('dengan dividen', 'with dividends')}` : (S.divCount ? L('dividen kecil', 'small dividends') : L('tidak membagikan dividen', 'pays no dividend')), from: S.T0, to: S.T1},
+    {v: pct(S.bestCh.pct), k: L('Bab terkuat', 'Strongest chapter'), s: S.bestCh.title, from: S.bestCh.st, to: S.bestCh.et, ch: S.bestCh},
+    {v: pct(S.worst), k: L('Kejatuhan terdalam', 'Deepest fall'), s: S.worstCh.title, from: S.worstCh.st, to: S.worstCh.et, ch: S.worstCh},
+  ];
+  $('dKpis').innerHTML = kp.map(it => `<${it.ch ? 'button type="button" style="border-top:0;border-right:0;border-bottom:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit"' : 'div'} class="kpi"${it.ch ? ` data-ch="${it.ch.i}"` : ''}><span class="v${it.ch ? ' c-' + it.ch.type : ''}">${it.v}</span><span class="k">${it.k}</span><span class="s">${esc(it.s)}</span>${bars(S, it.from, it.to)}</${it.ch ? 'button' : 'div'}>`).join('');
+  $('steps').innerHTML = S.ch.map(c => {
+    const n = S.ch[c.i+1];
+    return `<article class="step" data-i="${c.i}" aria-labelledby="h-${c.i}">
+      <div class="panel card ${c.type}">
+        <div class="meta">${tag(c)}<span>${L('Bab', 'Chapter')} ${c.i+1} · ${c.when}</span></div>
+        <h2 id="h-${c.i}">${esc(c.title)}</h2>
+        <div class="move"><b class="c-${c.type}">${pct(c.pct)}</b><span>${px(S, c.from)} ${L('ke', 'to')} ${px(S, c.to)}</span></div>
+        <p>${esc(c.body)}</p>
+        <h3>${L('Penyebab', 'What drove it')}</h3>
+        <ul>${c.causes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        ${n ? `<button type="button" class="nextch" data-go="${n.i}"><span><small>${L('Bab berikutnya', 'Next chapter')}</small><span>${esc(n.title)}</span></span><b class="arr" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 4v12M5 11l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></b></button>`
+            : `<button type="button" class="nextch" data-go="end"><span><small>${L('Selanjutnya', 'Next')}</small><span>${L('Seluruh perjalanan, kalkulator, dan pelajaran', 'The full journey, calculator, and lessons')}</span></span><b class="arr" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 4v12M5 11l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></b></button>`}
+      </div>
+    </article>`; }).join('');
+  $('strip').innerHTML = S.ch.map(c => `<span class="${c.type}" style="--w:${Math.max(1,(c.et-c.st)/(S.T1-S.T0)*30).toFixed(2)}"><i></i></span>`).join('');
+  $('tocList').innerHTML = S.ch.map(c => `<li><button type="button" data-i="${c.i}"><span class="n">${c.i+1}</span><span><span class="t">${esc(c.title)}</span><span class="e">${c.when}, ${TYPE_LABEL[c.type].toLowerCase()}</span></span><span class="p c-${c.type}">${pct(c.pct)}</span></button></li>`).join('');
+  steps = [...$('steps').children]; strips = [...$('strip').children];
+  lock = null;
+  story.setStock(S); active = -1;
+  setActive(0, true);
+  ex.setStock(S);
+  const mn = Math.min(...S.D.map(d => d.v)), mx = Math.max(...S.D.map(d => d.v)), lr = Math.log10(mx/mn);
+  Object.assign(ex.s, {x0:S.T0 - 30*DAY, x1:S.T1 + 30*DAY, y0:0, y1:mx*1.12, l0:Math.log10(mn) - lr*.06, l1:Math.log10(mx) + lr*.1, m:1, rev:S.T1});
+  $('xLog').setAttribute('aria-pressed', true); $('xLin').setAttribute('aria-pressed', false);
+  ex.resize(); story.resize();
+  replayed = false;
+  $('dataTbl').innerHTML = `<thead><tr><th>${L('Bab', 'Chapter')}</th><th>${L('Periode', 'Period')}</th><th>${L('Jenis', 'Type')}</th><th class="r">${L('Harga awal', 'Start price')}</th><th class="r">${L('Harga akhir', 'End price')}</th><th class="r">${L('Perubahan', 'Change')}</th></tr></thead><tbody>` +
+    S.ch.map(c => `<tr><td>${c.i+1}. ${esc(c.title)}</td><td>${c.when}</td><td>${TYPE_LABEL[c.type]}</td><td class="r">${px(S, c.from)}</td><td class="r">${px(S, c.to)}</td><td class="r c-${c.type}">${pct(c.pct)}</td></tr>`).join('') + '</tbody>';
+  const y0 = new Date(S.T0).getUTCFullYear();
+  $('yr').min = y0; $('yr').value = y0;
+  const want = isID(S) ? 'idr' : 'usd';
+  if (cur$ !== want){ cur$ = want; $('amt').value = fmtInt(want === 'idr' ? 10000000 : 1000); document.querySelectorAll('[data-cur]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cur === want)); }
+  calc();
+  const worst = S.ch.filter(c => c.type === 'bear').sort((a,b) => a.pct-b.pct).slice(0,5);
+  $('ddList').innerHTML = worst.map(c => { const f = Math.min(1, Math.abs(c.pct)/100), ang = Math.PI*(1-f);
+    const ax = 26 + 20*Math.cos(ang), ay = 28 - 20*Math.sin(ang);
+    return `<li><button type="button" data-i="${c.i}"><svg viewBox="0 0 52 32" aria-hidden="true"><path class="arc-bg" d="M6 28 A20 20 0 0 1 46 28"/><path class="arc" d="M6 28 A20 20 0 0 1 ${ax.toFixed(1)} ${ay.toFixed(1)}"/></svg><span style="min-width:0"><span class="t">${esc(c.title)}</span><span class="e">${c.when}</span></span><span class="p">${pct(c.pct)}<small>${recovery(c)}</small></span></button></li>`; }).join('');
+  {
+    const id = isID(S), M = id ? MK.jk : MK.tr, mn = mkName(S).replace('&', '&amp;');
+    const t0 = S.T0, sm = mkMult(M, t0, S.T1), smPx = mkMult(MK.px, t0, S.T1), st = id ? S.mult : (S.trMult || S.mult), ratio = st/sm;
+    const W = 600, H = 170, pts = (arr, base) => arr.filter(p => p.t >= t0).map(p => [p.t, p.v/base]);
+    const sa = id || !S.TR.length ? S.D : S.TR, a = pts(sa, sa[0].v), b = pts(M, interp(M, t0));
+    const all = a.concat(b).map(p => p[1]), l0 = Math.log10(Math.min(...all, 1))-.05, l1 = Math.log10(Math.max(...all))+.05;
+    const x = t => (t-t0)/(S.T1-t0)*W, y = v => 8 + (1-(Math.log10(v)-l0)/(l1-l0))*(H-16);
+    const d = arr => arr.map((p,k) => (k ? 'L' : 'M') + x(p[0]).toFixed(1) + ',' + y(p[1]).toFixed(1)).join('');
+    const win = ratio >= 1;
+    $('vsMarket').innerHTML = `<div class="panel-head"><h3>${L('Dibanding pasar', 'Against the market')} (${mn})</h3></div>
+      <div class="vsm-body">
+        <div class="vsm-nums">
+          <div><b style="color:${S.b}">${mult(st)}</b><span>${esc(S.name)}${id ? L(', harga saja', ', price only') : S.divCount ? L(', dengan dividen', ', with dividends') : L(' (tanpa dividen)', ' (no dividends)')}</span></div>
+          <div><b>${mult(sm)}</b><span>${id ? L('IHSG, harga saja', 'JCI, price only') : L(`S&amp;P 500, dengan dividen (harga saja ${mult(smPx)})`, `S&amp;P 500, with dividends (price only ${mult(smPx)})`)}</span></div>
+          <p class="vsm-verdict ${win ? 'c-bull' : 'c-bear'}">${win ? L(`Mengalahkan pasar ${mult(ratio)}`, `Beat the market ${mult(ratio)}`) : L(`Tertinggal dari pasar: hanya ${num(ratio*100, 0)}% dari hasil ${mn}`, `Trailed the market: only ${num(ratio*100, 0)}% of the ${mn} result`)}</p>
+          <p class="note">${L('Sejak', 'From')} ${S.T0 <= ts('2010-01-31') ? L('awal 2010', 'the start of 2010') : S.lateStart ? fmon(S.T0) : 'IPO ' + fmon(S.T0)} ${L('sampai akhir 2025.', 'to the end of 2025.')} ${id ? L('IHSG tidak memasukkan dividen, jadi keduanya dibandingkan dengan harga saja.', 'The JCI excludes dividends, so both are compared on price only.') : L('Dividen diinvestasikan kembali di keduanya.', 'Dividends are reinvested in both.')}</p>
+        </div>
+        <svg class="vsm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${L('Grafik', 'Chart of')} ${esc(S.name)} ${L('dibanding', 'against')} ${mn}">
+          <path d="${d(b)}" fill="none" style="stroke:var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" opacity=".6" vector-effect="non-scaling-stroke"/>
+          <path d="${d(a)}" fill="none" style="stroke:${S.b}" stroke-width="2.2" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div class="legend vsm-leg"><span><i style="background:${S.b}"></i>${S.tk}</span><span><i style="background:var(--ink);opacity:.6"></i>${mn} ${L('(putus-putus)', '(dashed)')}</span></div>`;
+  }
+  $('lessons').innerHTML = S.lessons.map(([h,p], k) => `<div class="panel lesson"><div class="ic"><svg viewBox="0 0 20 20" aria-hidden="true">${LESSON_ICONS[k % 3]}</svg></div><h4>${esc(h)}</h4><p>${esc(p)}</p></div>`).join('');
+  const peers = STOCKS.filter(o => isID(o) === isID(S)), pi = peers.indexOf(S);
+  const others = [1,2,3,4].map(k => peers[(pi + k) % peers.length]).filter(o => o !== S);
+  $('moreTiles').innerHTML = others.map(o => tileHTML(o)).join('');
+  countIn(document.querySelectorAll('#dKpis .v, #vsMarket .vsm-nums b'));
+}
+$('dKpis').addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if (b) { stopPlay(); goTo(+b.dataset.ch); } });
+$('steps').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (!b) return; stopPlay();
+  if (b.dataset.go === 'end') $('epilog').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth'}); else goTo(+b.dataset.go); });
+$('ddList').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b){ stopPlay(); goTo(+b.dataset.i); } });
+$('prev').addEventListener('click', () => { stopPlay(); goTo(active-1); });
+$('next').addEventListener('click', () => { stopPlay(); goTo(active+1); });
+function setMode(m){ mode = m; $('mFocus').setAttribute('aria-pressed', m === 'focus'); $('mAll').setAttribute('aria-pressed', m === 'all'); story.animate(targetFor(active), 600); }
+$('mFocus').addEventListener('click', () => setMode('focus'));
+$('mAll').addEventListener('click', () => setMode('all'));
+document.addEventListener('keydown', e => {
+  if (!S || e.target.closest('input,select,textarea,dialog')) return;
+  const r = $('story').getBoundingClientRect(); if (r.top > innerHeight*.5 || r.bottom < innerHeight*.5) return;
+  if (e.key === 'ArrowRight' || e.key === 'j'){ e.preventDefault(); stopPlay(); goTo(active+1, 'key'); }
+  if (e.key === 'ArrowLeft' || e.key === 'k'){ e.preventDefault(); stopPlay(); goTo(active-1, 'key'); }
+});
+
+const toc = $('toc');
+$('tocBtn').addEventListener('click', () => {
+  stopPlay();
+  toc.querySelectorAll('button[data-i]').forEach(b => b.setAttribute('aria-current', +b.dataset.i === active));
+  tocY = scrollY;
+  const cur = toc.querySelector('button[aria-current="true"]');
+  openModal(toc, cur || $('tocClose'));
+  if (cur){ const list = toc, li = cur.closest('li'); list.scrollTop = Math.max(0, li.offsetTop - list.clientHeight/2 + li.offsetHeight/2); }
+});
+$('tocClose').addEventListener('click', () => toc.close());
+let tocY = 0; toc.addEventListener('close', () => { if (!toc.dataset.nav) window.scrollTo(0, tocY); delete toc.dataset.nav; });
+toc.addEventListener('click', e => { if (e.target === toc){ toc.close(); return; } const b = e.target.closest('button[data-i]'); if (!b) return; toc.dataset.nav = '1'; toc.close(); goTo(+b.dataset.i); });
+
+let replayed = false;
+new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting && !replayed && S){ replayed = true; if (REDUCED) return; ex.s.rev = S.T0; ex.render(); ex.animate({rev:S.T1}, 1600); }
+}), {threshold:.35}).observe($('exBox'));
+function setScale(log){ $('xLog').setAttribute('aria-pressed', log); $('xLin').setAttribute('aria-pressed', !log); ex.animate({m: log ? 1 : 0}, 600); }
+$('xLog').addEventListener('click', () => setScale(true));
+$('xLin').addEventListener('click', () => setScale(false));
+const tip = $('tip'), exSvg = $('exSvg');
+const chapterAt = t => S.ch.find(c => t >= c.st && t <= c.et) || S.ch[S.ch.length-1];
+function exMove(ev){
+  if (!S || !ex.pad) return;
+  const r = exSvg.getBoundingClientRect(), px = ev.clientX - r.left;
+  if (px < ex.pad.l || px > ex.w - ex.pad.r){ exLeave(); return; }
+  const t = Math.max(S.T0, Math.min(S.T1, ex.invX(px))), v = S.val(t), x = ex.X(t), y = ex.Y(v), c = chapterAt(t);
+  ex.hov.style.display = '';
+  const [ln, dot] = ex.hov.children;
+  ln.setAttribute('x1', x); ln.setAttribute('x2', x); ln.setAttribute('y1', ex.pad.t-14); ln.setAttribute('y2', ex.h-ex.pad.b);
+  dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+  tip.innerHTML = `<div class="sub">${fdate(t)}</div><b>${px(S, v)}</b><div><span class="c-${c.type}">${TYPE_LABEL[c.type]}</span>: ${esc(c.title)}</div><div class="sub">${L('Klik untuk membuka bab', 'Click to open chapter')} ${c.i+1}</div>`;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let lx = x + 14; if (lx + tw > ex.w) lx = x - tw - 14;
+  let ty = y - th - 12; if (ty < 0) ty = y + 14;
+  tip.style.left = Math.max(0, lx) + 'px'; tip.style.top = Math.min(ex.h - th, ty) + 'px'; tip.style.opacity = 1;
+}
+function exLeave(){ ex.hov.style.display = 'none'; tip.style.opacity = 0; }
+exSvg.addEventListener('pointermove', exMove);
+exSvg.addEventListener('pointerleave', exLeave);
+exSvg.addEventListener('click', ev => {
+  if (!S) return;
+  const r = exSvg.getBoundingClientRect(), t = ex.invX(ev.clientX - r.left);
+  if (t < S.T0 - 20*DAY || t > S.T1 + 20*DAY) return;
+  stopPlay(); goTo(chapterAt(Math.max(S.T0, Math.min(S.T1, t))).i);
+});
+
+// calculator: in rupiah the capital is converted to dollars at the buy date and back at the end-2025 rate
+const FX = (window.FX_IDR || []).map(([d, v]) => [ts(d), v]);
+const fxAt = t => {
+  if (!FX.length) return null;
+  let lo = 0, hi = FX.length - 1;
+  if (t >= FX[hi][0]) return FX[hi][1];
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (FX[m][0] <= t) lo = m; else hi = m; }
+  return FX[lo][1];
+};
+let cur$ = 'usd';
+const parseAmt = v => parseFloat(String(v).replace(/[^\d]/g, '')) || 0;
+const fmtInt = v => Math.round(v).toLocaleString(LOC);
+function rp(v){
+  const a = Math.abs(v);
+  if (a >= 1e12) return 'Rp' + num(v/1e12, 2) + L(' triliun', ' trillion');
+  if (a >= 1e9) return 'Rp' + num(v/1e9, 2) + L(' miliar', ' billion');
+  if (a >= 1e6) return 'Rp' + num(v/1e6, 2) + L(' juta', ' million');
+  return 'Rp' + fmtInt(v);
+}
+function setCur(c){
+  if (c === cur$) return;
+  const amt = parseAmt($('amt').value), rate = fxAt(S ? S.T1 : Date.now()) || 16000;
+  // keep roughly the same amount of money when switching currency
+  const next = c === 'idr' ? Math.round(amt*rate/100000)*100000 : Math.max(1, Math.round(amt/rate/10)*10);
+  cur$ = c; $('amt').value = fmtInt(next || (c === 'idr' ? 10000000 : 1000));
+  document.querySelectorAll('[data-cur]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cur === c));
+  calc();
+}
+document.querySelectorAll('[data-cur]').forEach(b => b.addEventListener('click', () => setCur(b.dataset.cur)));
+let calcTR = false;
+document.querySelectorAll('[data-div]').forEach(b => b.addEventListener('click', () => { calcTR = b.dataset.div === 'yes'; document.querySelectorAll('[data-div]').forEach(x => x.setAttribute('aria-pressed', x === b)); calc(); }));
+function calc(){
+  if (!S) return;
+  const amt = parseAmt($('amt').value), y = +$('yr').value;
+  $('yrOut').textContent = y;
+  const t = Math.max(S.T0, Date.UTC(y,0,1)), buy = S.val(t), useTR = calcTR && S.TR.length, m = useTR ? S.trAt(S.T1)/S.trAt(t) : S.end/buy, yrs = (S.T1 - t)/YR;
+  const divTxt = useTR ? L('dividen diinvestasikan kembali', 'dividends reinvested') : L('tanpa dividen', 'without dividends');
+  $('rBuy').textContent = px(S, buy);
+  $('amtLbl').textContent = cur$ === 'idr' ? L('Modal (Rp)', 'Amount (Rp)') : L('Modal (US$)', 'Amount (US$)');
+  if (isID(S)){
+    // IDX stock: priced in rupiah; dollars are converted at the buy date and back at the end-2025 rate
+    const f0 = fxAt(t), f1 = fxAt(S.T1), mm = cur$ === 'idr' ? m : m * f0/f1, end = amt * mm, cagr = (Math.pow(mm, 1/yrs) - 1)*100;
+    $('rVal').textContent = cur$ === 'idr' ? rp(end) : '$' + fmtInt(end);
+    $('rValLbl').textContent = cur$ === 'idr' && end >= 1e6 ? L(`Nilai di akhir 2025 (Rp${fmtInt(end)})`, `Value at end of 2025 (Rp${fmtInt(end)})`) : L('Nilai di akhir 2025', 'Value at end of 2025');
+    $('rMul').textContent = mult(mm);
+    $('rCagr').textContent = (cagr >= 0 ? '+' : '−') + Math.abs(Math.round(cagr)) + '%';
+    $('rVal').style.color = mm >= 1 ? 'var(--gain)' : 'var(--loss)';
+    if (cur$ === 'idr'){
+      $('calcSub').textContent = L('Dihitung sampai penutupan 30 Desember 2025, ' + divTxt + ', tanpa pajak dan biaya.', 'Calculated to the close on 30 December 2025, ' + divTxt + ', before taxes and fees.');
+      $('fxNote').textContent = '';
+    } else {
+      $('calcSub').textContent = L('Dolar ditukar ke rupiah saat membeli, lalu hasilnya ditukar kembali dengan kurs akhir 2025. Dihitung ' + divTxt + ', tanpa pajak dan biaya.', 'Dollars are converted to rupiah at purchase, and the result is converted back at the end-2025 rate. Calculated ' + divTxt + ', before taxes and fees.');
+      const fxPart = (f0/f1 - 1)*100;
+      $('fxNote').innerHTML = L(`Kurs saat membeli <b>Rp${fmtInt(f0)}</b> per US$, kurs akhir 2025 <b>Rp${fmtInt(f1)}</b>. `, `Exchange rate at purchase <b>Rp${fmtInt(f0)}</b> per US$, end-2025 rate <b>Rp${fmtInt(f1)}</b>. `) +
+        (Math.abs(fxPart) < 1 ? L('Perubahan kurs hampir tidak berpengaruh.', 'The exchange rate made almost no difference.') : fxPart < 0 ? L(`Pelemahan rupiah mengurangi hasil dalam dolar sebesar ${num(-fxPart, 0)}%.`, `The weaker rupiah cut the dollar result by ${num(-fxPart, 0)}%.`) : L(`Penguatan rupiah menambah hasil dalam dolar sebesar ${num(fxPart, 0)}%.`, `The stronger rupiah added ${num(fxPart, 0)}% to the dollar result.`));
+    }
+  } else if (cur$ === 'idr'){
+    const f0 = fxAt(t), f1 = fxAt(S.T1), mIdr = m * f1/f0, end = amt * mIdr, cagr = (Math.pow(mIdr, 1/yrs) - 1)*100;
+    $('rVal').textContent = rp(end);
+    $('rValLbl').textContent = end >= 1e6 ? L(`Nilai di akhir 2025 (Rp${fmtInt(end)})`, `Value at end of 2025 (Rp${fmtInt(end)})`) : L('Nilai di akhir 2025', 'Value at end of 2025');
+    $('rMul').textContent = mult(mIdr);
+    $('rCagr').textContent = (cagr >= 0 ? '+' : '−') + Math.abs(Math.round(cagr)) + '%';
+    $('rVal').style.color = mIdr >= 1 ? 'var(--gain)' : 'var(--loss)';
+    $('calcSub').textContent = L('Rupiah ditukar ke dolar saat membeli, lalu hasilnya ditukar kembali dengan kurs akhir 2025. Dihitung ' + divTxt + ', tanpa pajak dan biaya.', 'Rupiah is converted to dollars at purchase, and the result is converted back at the end-2025 rate. Calculated ' + divTxt + ', before taxes and fees.');
+    const fxPart = (f1/f0 - 1)*100;
+    $('fxNote').innerHTML = L(`Kurs saat membeli <b>Rp${fmtInt(f0)}</b> per US$, kurs akhir 2025 <b>Rp${fmtInt(f1)}</b>. `, `Exchange rate at purchase <b>Rp${fmtInt(f0)}</b> per US$, end-2025 rate <b>Rp${fmtInt(f1)}</b>. `) +
+      (Math.abs(fxPart) < 1 ? L('Perubahan kurs hampir tidak berpengaruh.', 'The exchange rate made almost no difference.') : fxPart > 0 ? L(`Pelemahan rupiah menambah hasil sebesar ${num(fxPart, 0)}%.`, `The weaker rupiah added ${num(fxPart, 0)}% to the result.`) : L(`Penguatan rupiah mengurangi hasil sebesar ${num(-fxPart, 0)}%.`, `The stronger rupiah cut the result by ${num(-fxPart, 0)}%.`));
+  } else {
+    const end = amt * m, cagr = (Math.pow(m, 1/yrs) - 1)*100;
+    $('rVal').textContent = '$' + fmtInt(end);
+    $('rValLbl').textContent = L('Nilai di akhir 2025', 'Value at end of 2025');
+    $('rMul').textContent = mult(m);
+    $('rCagr').textContent = (cagr >= 0 ? '+' : '−') + Math.abs(Math.round(cagr)) + '%';
+    $('rVal').style.color = m >= 1 ? 'var(--gain)' : 'var(--loss)';
+    $('calcSub').textContent = L('Dihitung sampai penutupan 31 Desember 2025, ' + divTxt + ', tanpa pajak dan biaya.', 'Calculated to the close on 31 December 2025, ' + divTxt + ', before taxes and fees.');
+    $('fxNote').textContent = '';
+  }
+  // the same money converted the way the result above is: rupiah for a US stock, dollars for an IDX stock
+  const f0 = fxAt(t), fxk = isID(S) === (cur$ === 'idr') ? () => 1 : isID(S) ? u => f0/fxAt(u) : u => fxAt(u)/f0;
+  calcPath(t, useTR, fxk, amt);
+}
+// the value of the holding week by week (month-end with dividends), its deepest fall from a peak and its low point
+const money = v => cur$ === 'idr' ? rp(v) : '$' + fmtInt(v);
+let cp = null;
+function calcPath(t, useTR, fxk, amt){
+  const svg = $('calcSvg'), base = useTR ? S.trAt(t) : S.val(t), src = useTR ? S.TR : S.D;
+  const P = [{t, v: amt * fxk(t)}];
+  for (const d of src) if (d.t > t) P.push({t: d.t, v: amt * d.v/base * fxk(d.t)});
+  let peak = P[0], dd = 0, ddPk = P[0], ddLo = P[0], low = P[0];
+  for (const p of P){
+    if (p.v > peak.v) peak = p;
+    const r = p.v/peak.v - 1;
+    if (r < dd){ dd = r; ddPk = peak; ddLo = p; }
+    if (p.v < low.v) low = p;
+  }
+  $('rDD').textContent = dd < -0.005 ? pct(dd*100) : '0%';
+  $('rDD').style.color = dd < -0.005 ? 'var(--loss)' : '';
+  $('rDDLbl').textContent = dd < -0.005 ? L(`Penurunan terdalam selama memegang (${fmon(ddPk.t)} – ${fmon(ddLo.t)})`, `Deepest fall while holding (${fmon(ddPk.t)} – ${fmon(ddLo.t)})`) : L('Penurunan terdalam selama memegang', 'Deepest fall while holding');
+  const under = low.v < amt*0.995;
+  $('rLow').textContent = money(low.v);
+  $('rLow').style.color = under ? 'var(--loss)' : '';
+  $('rLowLbl').textContent = under ? L(`Nilai terendah, ${pct((low.v/amt - 1)*100)} dari modal (${fmon(low.t)})`, `Lowest value, ${pct((low.v/amt - 1)*100)} of the amount (${fmon(low.t)})`) : L('Nilai terendah: tidak pernah di bawah modal', 'Lowest value: never below the amount');
+  cp = {P, amt, ddPk, ddLo};
+  drawPath();
+}
+function drawPath(hov){
+  const svg = $('calcSvg'), W = svg.clientWidth, H = svg.clientHeight;
+  if (!cp || !W) return;
+  const {P, amt, ddPk, ddLo} = cp, T0 = P[0].t, T1 = P[P.length-1].t, pad = {l: 2, r: 2, t: 8, b: 18};
+  let mn = amt, mx = amt; for (const p of P){ if (p.v < mn) mn = p.v; if (p.v > mx) mx = p.v; }
+  const l0 = Math.log10(mn) - .04, l1 = Math.log10(mx) + .04;
+  const X = u => pad.l + (u - T0)/Math.max(1, T1 - T0)*(W - pad.l - pad.r), Y = v => pad.t + (1 - (Math.log10(v) - l0)/(l1 - l0))*(H - pad.t - pad.b);
+  const line = arr => arr.map((p, k) => (k ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.v).toFixed(1)).join('');
+  const col = P[P.length-1].v >= amt ? 'var(--gain)' : 'var(--loss)';
+  const ddSeg = P.filter(p => p.t >= ddPk.t && p.t <= ddLo.t);
+  const y0 = new Date(T0).getUTCFullYear(), y1 = new Date(T1).getUTCFullYear();
+  let hl = '';
+  if (hov){
+    const x = X(hov.t), y = Y(hov.v);
+    hl = `<line class="hl" x1="${x}" x2="${x}" y1="${pad.t}" y2="${H - pad.b}"/><circle cx="${x}" cy="${y}" r="4" style="fill:${col}"/>`;
+  }
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `<path class="area" style="fill:${col}" d="${line(P)}L${X(T1).toFixed(1)},${H - pad.b}L${X(T0).toFixed(1)},${H - pad.b}Z"/>
+    <line class="base" x1="${pad.l}" x2="${W - pad.r}" y1="${Y(amt)}" y2="${Y(amt)}"/>
+    <path class="val" style="stroke:${col}" d="${line(P)}"/>
+    ${ddSeg.length > 1 ? `<path class="dd" d="${line(ddSeg)}"/>` : ''}
+    <text class="ax" x="${pad.l}" y="${H - 3}">${y0}</text><text class="ax" x="${W - pad.r}" y="${H - 3}" text-anchor="end">${y1 > y0 ? y1 : ''}</text>${hl}`;
+  $('calcCap').innerHTML = hov ? `${fdate(hov.t)}: <b>${money(hov.v)}</b> (${pct((hov.v/amt - 1)*100)})`
+    : L('Nilai investasimu dari waktu ke waktu. Garis putus-putus adalah modal, garis merah tebal adalah penurunan terdalam. Arahkan kursor atau sentuh untuk melihat nilai di satu tanggal.', 'Your investment over time. The dashed line is the amount you put in, the thick red line is the deepest fall. Hover or touch to see the value on a date.');
+}
+{
+  const svg = $('calcSvg');
+  const at = ev => {
+    if (!cp) return;
+    const r = svg.getBoundingClientRect(), k = Math.max(0, Math.min(1, (ev.clientX - r.left)/r.width)), u = cp.P[0].t + k*(cp.P[cp.P.length-1].t - cp.P[0].t);
+    let best = cp.P[0]; for (const p of cp.P){ if (Math.abs(p.t - u) < Math.abs(best.t - u)) best = p; }
+    drawPath(best);
+  };
+  svg.addEventListener('pointermove', at);
+  svg.addEventListener('pointerdown', at);
+  svg.addEventListener('pointerleave', () => drawPath());
+  new ResizeObserver(() => drawPath()).observe(svg);
+}
+// format the capital with thousand separators while typing
+$('amt').addEventListener('blur', () => { $('amt').value = fmtInt(parseAmt($('amt').value)); });
+$('amt').addEventListener('input', calc); $('yr').addEventListener('input', calc);
+
+/* ---------- autoplay ---------- */
+const PLAY_MS = 8000; let timer = null;
+const playBtn = $('play'), meter = $('meter');
+playBtn.style.setProperty('--dur', PLAY_MS + 'ms');
+function tick(){ meter.style.animation = 'none'; void meter.offsetWidth; meter.style.animation = ''; }
+function startPlay(){
+  if (timer || !S) return;
+  playBtn.classList.add('running'); playBtn.setAttribute('aria-pressed','true'); playBtn.setAttribute('aria-label',L('Jeda cerita otomatis', 'Pause autoplay'));
+  $('playIco').textContent = '❚❚'; $('playLbl').textContent = L('Jeda', 'Pause');
+  const r = $('story').getBoundingClientRect();
+  if (r.top > innerHeight*.4 || r.bottom < innerHeight*.6) goTo(r.bottom < innerHeight*.6 ? 0 : Math.max(0, active));
+  tick();
+  timer = setInterval(() => {
+    if (active >= S.ch.length-1){ stopPlay(); $('epilog').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth'}); return; }
+    goTo(active+1); tick();
+  }, PLAY_MS);
+}
+function stopPlay(){
+  if (!timer) return; clearInterval(timer); timer = null;
+  playBtn.classList.remove('running'); playBtn.setAttribute('aria-pressed','false'); playBtn.setAttribute('aria-label',L('Putar cerita otomatis', 'Autoplay the story'));
+  $('playIco').textContent = '▶'; $('playLbl').textContent = L('Putar otomatis', 'Autoplay');
+}
+playBtn.addEventListener('click', () => timer ? stopPlay() : startPlay());
+['wheel','touchmove'].forEach(ev => addEventListener(ev, stopPlay, {passive:true}));
+
+const prog = $('progress');
+let progMax = 1, progQueued = false;
+const measureProg = () => { progMax = Math.max(1, document.documentElement.scrollHeight - innerHeight); };
+function onScroll(){ if (progQueued) return; progQueued = true; requestAnimationFrame(() => { progQueued = false; prog.style.transform = `scaleX(${Math.min(1, scrollY/progMax)})`; }); }
+addEventListener('scroll', onScroll, {passive:true});
+addEventListener('resize', measureProg);
+new ResizeObserver(measureProg).observe(document.body);
+
+/* ---------- theme: follows the device until the viewer picks one ---------- */
+(() => {
+  const root = document.documentElement, btn = $('themeBtn'), mq = matchMedia('(prefers-color-scheme: dark)');
+  let saved = null;
+  try { saved = localStorage.getItem('kisah-theme'); } catch (e) {}
+  const effective = () => root.dataset.theme || (mq.matches ? 'dark' : 'light');
+  function apply(t){
+    if (t) root.dataset.theme = t; else delete root.dataset.theme;
+    const now = effective();
+    root.dataset.theme = now; // always set so the icon reflects the current mode
+    btn.setAttribute('aria-label', now === 'dark' ? L('Ganti ke mode terang', 'Switch to light mode') : L('Ganti ke mode gelap', 'Switch to dark mode'));
+    btn.title = now === 'dark' ? L('Mode terang', 'Light mode') : L('Mode gelap', 'Dark mode');
+    document.dispatchEvent(new Event('sj-theme'));
+  }
+  apply(saved === 'light' || saved === 'dark' ? saved : null);
+  btn.addEventListener('click', e => {
+    const next = effective() === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('kisah-theme', next); } catch (e) {}
+    if (REDUCED){ apply(next); return; }
+    if (!document.startViewTransition || document.visibilityState !== 'visible'){
+      // no View Transitions: cross-fade the colors instead
+      root.classList.add('theme-fade'); apply(next); setTimeout(() => root.classList.remove('theme-fade'), 300); return;
+    }
+    // circle grows from the button (or the screen centre when triggered from the menu)
+    const r = btn.getBoundingClientRect(), vis = r.width > 0 && e.isTrusted && e.clientX;
+    const x = vis ? r.left + r.width/2 : innerWidth/2, y = vis ? r.top + r.height/2 : innerHeight/2;
+    root.style.setProperty('--tx', x + 'px'); root.style.setProperty('--ty', y + 'px');
+    root.style.setProperty('--tr', Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 'px');
+    root.classList.add('vt-theme');
+    const vt = document.startViewTransition(() => apply(next));
+    vt.finished.catch(() => {}).then(() => root.classList.remove('vt-theme'));
+  });
+  mq.addEventListener('change', () => { let s = null; try { s = localStorage.getItem('kisah-theme'); } catch (e) {} if (!s){ delete root.dataset.theme; apply(null); } });
+})();
+
+
+/* ================= EVENTS ================= */
+const IDM_EV = MKT === 'id', REF = IDM_EV ? L('IHSG', 'JCI') : 'S&amp;P 500', REFS = IDM_EV ? L('IHSG', 'JCI') : 'S&amp;P', MKE = IDM_EV ? MK.jk : MK.px;
+const EVENTS = (window.EVENTS || []).map(e => ({...e, st: ts(e.start), et: ts(e.end)}));
+const evById = Object.fromEntries(EVENTS.map(e => [e.id, e]));
+let evSel = (EVENTS.find(e => /covid|2020/.test(e.id)) || EVENTS[0] || {}).id, pendingEv = null;
+const pct1 = p => (p >= 0 ? '+' : '−') + (Math.abs(p) < 10 ? num(Math.abs(p), 1) : Math.round(Math.abs(p)).toLocaleString(LOC)) + '%';
+const sgn = p => p < 0 ? 'dn' : 'upb';
+const evRange = e => { const a = new Date(e.st), b = new Date(e.et); return a.getUTCFullYear() === b.getUTCFullYear() ? `${a.getUTCDate()} ${MONTHS[a.getUTCMonth()]} – ${fdate(e.et)}` : `${fdate(e.st)} – ${fdate(e.et)}`; };
+function recText(e, r){
+  if (r.chg >= 0) return {t: e.kind === 'up' ? '–' : L('tidak turun', 'no fall'), cls: ''};
+  if (!r.rec) return {t: L('belum pulih', 'not recovered'), cls: 'no'};
+  const d = Math.round((ts(r.rec) - e.st) / DAY);
+  if (d < 31) return {t: L(`pulih ${d} hari`, `${d} days`), d: L(`${d} hari`, `${d} days`), cls: ''};
+  if (d < 730) return {t: L(`pulih ${Math.round(d / 30.44)} bln`, `${Math.round(d / 30.44)} mo`), d: L(`${Math.round(d / 30.44)} bln`, `${Math.round(d / 30.44)} months`), cls: ''};
+  return {t: L(`pulih ${num(d / 365.25, 1)} thn`, `${num(d / 365.25, 1)} yrs`), d: L(`${num(d / 365.25, 1)} thn`, `${num(d / 365.25, 1)} years`), cls: ''};
+}
+// chapter of a stock's story that covers the middle of the event window
+function evChapter(S, e){
+  const t = (e.st + e.et) / 2;
+  const c = S.ch.find(c => c.st <= t && t <= c.et) || S.ch.find(c => c.st <= e.st && e.st <= c.et);
+  return c ? c.i : 0;
+}
+function evRowsSorted(e){
+  return STOCKS.map(S => ({S, r: e.rows[S.tk]})).sort((a, b) => (b.r ? b.r.chg : -1e9) - (a.r ? a.r.chg : -1e9));
+}
+
+// home teaser cards
+$('evCards').innerHTML = EVENTS.map(e => {
+  const rows = evRowsSorted(e).filter(x => x.r), w = e.kind === 'up' ? rows[0] : rows[rows.length - 1];
+  return `<a class="panel evcard" href="#events" data-ev="${e.id}">
+    <span class="yr">${evRange(e)}</span><h3>${esc(e.title)}</h3>
+    <span class="row">${REF}<b class="${sgn(e.sp.chg)}">${pct1(e.sp.chg)}</b></span>
+    <span class="row">${e.kind === 'up' ? L('Naik paling tinggi', 'Biggest gain') : L('Paling terpukul', 'Hit hardest')}<span class="who">${mono(w.S)}<b class="${sgn(w.r.chg)}">${pct1(w.r.chg)}</b></span></span>
+  </a>`;
+}).join('');
+$('evCards').addEventListener('click', e => { const a = e.target.closest('a[data-ev]'); if (a) pendingEv = a.dataset.ev; });
+
+// picker tabs
+$('evPick').innerHTML = EVENTS.map(e => `<button type="button" role="tab" id="evt-${e.id}" aria-controls="evBody" data-ev="${e.id}" aria-selected="false" tabindex="-1">${esc(e.short)}<small class="${e.sp.chg < 0 ? 'down' : 'up'}">${REFS} ${pct1(e.sp.chg)}</small></button>`).join('');
+$('evPick').addEventListener('click', e => { const b = e.target.closest('button[data-ev]'); if (b) selectEvent(b.dataset.ev, true); });
+$('evPick').addEventListener('keydown', e => {
+  const k = {ArrowRight: 1, ArrowLeft: -1, Home: -99, End: 99}[e.key]; if (!k) return;
+  e.preventDefault();
+  const i = EVENTS.findIndex(x => x.id === evSel), n = Math.max(0, Math.min(EVENTS.length - 1, Math.abs(k) === 99 ? (k > 0 ? 99 : 0) : i + k));
+  selectEvent(EVENTS[n].id, true); $('evt-' + EVENTS[n].id).focus();
+});
+
+// S&P timeline with the event windows
+function drawEvLine(){
+  $('evSvg').setAttribute('aria-label', L(`${REF.replace('&amp;', '&')} sejak 2010 dengan periode setiap peristiwa ditandai`, `${REF.replace('&amp;', '&')} since 2010 with each event period marked`));
+  const svg = $('evSvg'), W = svg.clientWidth || 800, H = svg.clientHeight || 150, padB = 22, padT = 22;
+  if (!MKE.length) return;
+  const t0 = MKE[0].t, t1 = MKE[MKE.length - 1].t;
+  const lv = MKE.map(p => Math.log(p.v)), lo = Math.min(...lv), hi = Math.max(...lv);
+  const x = t => (t - t0) / (t1 - t0) * W, y = v => padT + (1 - (Math.log(v) - lo) / (hi - lo)) * (H - padT - padB);
+  const d = MKE.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join('');
+  let ax = '';
+  for (let yr = 2010; yr <= 2025; yr += (W < 600 ? 5 : 3)){ const xx = x(ts(yr + '-01-01')); ax += `<line class="gl" x1="${xx}" x2="${xx}" y1="${padT}" y2="${H - padB}"/><text class="ax" x="${xx + (yr === 2010 ? 0 : 0)}" y="${H - 4}" text-anchor="${yr === 2010 ? 'start' : 'middle'}">${yr}</text>`; }
+  const bands = EVENTS.map(e => {
+    const xa = x(e.st), w = Math.max(8, x(e.et) - xa), cx = xa + w / 2;
+    return `<g class="band ${e.kind}" data-ev="${e.id}"><title>${esc(e.title)}</title><rect x="${(cx - w / 2).toFixed(1)}" y="${padT - 14}" width="${w.toFixed(1)}" height="${H - padB - padT + 14}" rx="3"/><circle cx="${cx.toFixed(1)}" cy="${padT - 14}" r="4.5"/></g>`;
+  }).join('');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = ax + `<path class="ar" d="${d}L${W} ${H - padB}L0 ${H - padB}Z"/><path class="ln" d="${d}"/>` + bands;
+  svg.querySelectorAll('.band').forEach(g => g.classList.toggle('on', g.dataset.ev === evSel));
+}
+$('evSvg').addEventListener('click', e => { const g = e.target.closest('.band'); if (g) selectEvent(g.dataset.ev, true); });
+
+function selectEvent(id, user){
+  const e = evById[id]; if (!e) return;
+  const same = id === evSel && $('evRows').childElementCount;
+  evSel = id;
+  $('evPick').querySelectorAll('button').forEach(b => { const on = b.dataset.ev === id; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; if (on){ const pk = $('evPick'); pk.scrollTo({left: b.offsetLeft - (pk.clientWidth - b.offsetWidth) / 2, behavior: REDUCED || user === 'init' ? 'auto' : 'smooth'}); } });
+  $('evBody').setAttribute('aria-labelledby', 'evt-' + id);
+  $('evSvg').querySelectorAll('.band').forEach(g => g.classList.toggle('on', g.dataset.ev === id));
+  if (same) return;
+  const rows = evRowsSorted(e), have = rows.filter(x => x.r);
+  const below = have.filter(x => e.kind === 'up' ? x.r.chg > e.sp.chg : x.r.chg < e.sp.chg).length;
+  const spRec = e.sp.chg < 0 ? (e.sp.rec ? recText(e, e.sp).d : L('belum', 'not yet')) : null;
+  $('evInfo').innerHTML = `<span class="tag ${e.kind === 'up' ? 'bull' : 'bear'}"><i></i>${e.kind === 'up' ? L('Lonjakan', 'Surge') : L('Guncangan', 'Shock')}</span>
+    <div class="when">${evRange(e)}</div><h2>${esc(e.title)}</h2><p>${esc(e.body)}</p>
+    <div class="evstats"><div><b class="${sgn(e.sp.chg)}" style="color:var(--${e.sp.chg < 0 ? 'loss' : 'gain'})">${pct1(e.sp.chg)}</b><span>${REF} ${L('selama periode ini', 'over this period')}${spRec ? L(`, pulih dalam ${spRec}`, `, recovered in ${spRec}`) : ''}</span></div>
+    <div><b>${below} <small style="font-size:16px;color:var(--ink-2)">${L('dari', 'of')} ${have.length}</small></b><span>${e.kind === 'up' ? L('saham naik lebih tinggi dari pasar', 'stocks rose more than the market') : L('saham turun lebih dalam dari pasar', 'stocks fell more than the market')}</span></div></div>
+    <div class="evlesson"><h3>${L('Yang terlihat dari data', 'What the data shows')}</h3><p>${esc(e.lesson)}</p></div>`;
+  // scale shared by all rows, always including zero and the S&P line
+  const vals = have.map(x => x.r.chg).concat([0, e.sp.chg]);
+  let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * .04; lo -= lo < 0 ? pad : 0; hi += hi > 0 ? pad : 0;
+  const X = v => (v - lo) / (hi - lo) * 100, z = X(0), sp = X(e.sp.chg);
+  const box = $('evRows');
+  let head = box.querySelector('.evh');
+  if (!head){ head = document.createElement('div'); head.className = 'evh'; box.prepend(head); }
+  head.innerHTML = `<span></span><span>${L('Saham', 'Stock')}</span><span class="tr"><span class="spl ${sp < 12 ? 'l' : sp > 88 ? 'r' : ''}" style="left:${sp}%">${REF} ${pct1(e.sp.chg)}</span></span><span class="v">${L('Harga', 'Price')}</span><span>${L('Pemulihan', 'Recovery')}</span>`;
+  // FLIP: remember positions, reorder, then animate from the old spot
+  const first = new Map(); box.querySelectorAll('.evr').forEach(el => first.set(el.dataset.tk, el.getBoundingClientRect().top));
+  rows.forEach(({S, r}) => {
+    let el = box.querySelector(`.evr[data-tk="${S.id}"]`);
+    if (!el){ el = document.createElement('a'); el.dataset.tk = S.id; el.innerHTML = `${mono(S)}<span class="nm"><b>${esc(S.name)}</b><small>${S.tk}</small><span class="rcm"></span></span><span class="tr"><i class="zero"></i><i class="sp"></i><i class="bar"></i></span><span class="v"></span><span class="rc"></span>`; }
+    el.className = 'evr' + (r ? '' : ' na');
+    if (r){
+      const rc = recText(e, r), ch = evChapter(S, e);
+      el.href = '#' + S.id; el.dataset.ch = ch; el.removeAttribute('aria-disabled');
+      el.setAttribute('aria-label', `${S.name}: ${pct1(r.chg)}, ${rc.t}. ${L('Buka bab', 'Open chapter')} ${S.ch[ch].title}`);
+      el.querySelector('.tr').innerHTML = `<i class="zero"></i><i class="sp"></i><i class="bar"></i>`;
+      const bar = el.querySelector('.bar'), a = X(Math.min(0, r.chg)), b = X(Math.max(0, r.chg));
+      bar.className = 'bar ' + sgn(r.chg); bar.style.left = a + '%'; bar.style.width = Math.max(.6, b - a) + '%';
+      el.querySelector('.zero').style.left = z + '%'; el.querySelector('.sp').style.left = sp + '%';
+      const v = el.querySelector('.v'); v.textContent = pct1(r.chg); v.className = 'v ' + sgn(r.chg);
+      const c = el.querySelector('.rc'); c.textContent = rc.t; c.className = 'rc ' + rc.cls;
+      const m = el.querySelector('.rcm'); m.textContent = r.chg < 0 ? rc.t : ''; m.className = 'rcm ' + rc.cls;
+    } else {
+      el.removeAttribute('href'); delete el.dataset.ch; el.setAttribute('aria-disabled', 'true'); el.removeAttribute('aria-label');
+      el.querySelector('.tr').textContent = L('Belum melantai di bursa', 'Not yet listed');
+      el.querySelector('.v').textContent = ''; el.querySelector('.v').className = 'v'; el.querySelector('.rc').textContent = ''; el.querySelector('.rcm').textContent = '';
+    }
+    box.appendChild(el);
+  });
+  if (!REDUCED && first.size){
+    box.querySelectorAll('.evr').forEach(el => {
+      const f = first.get(el.dataset.tk); if (f == null) return;
+      const dy = f - el.getBoundingClientRect().top; if (!dy) return;
+      el.animate([{transform: `translateY(${dy}px)`}, {transform: 'none'}], {duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)'});
+    });
+  }
+}
+$('evRows').addEventListener('click', e => { const a = e.target.closest('a.evr[data-ch]'); if (a) pendingCh = +a.dataset.ch; });
+let evDrawn = false;
+function renderEvents(){
+  drawEvLine(); evDrawn = true;
+  const id = pendingEv && evById[pendingEv] ? pendingEv : evSel; pendingEv = null;
+  selectEvent(id, 'init');
+}
+new ResizeObserver(() => { if (evDrawn && !$('viewEvents').hidden) drawEvLine(); }).observe($('evSvg'));
+
+/* ================= ROUTER ================= */
+const viewHome = $('viewHome'), viewDetail = $('viewDetail'), viewEvents = $('viewEvents');
+const EVV = {id: 'events', ev: true};
+let homeScroll = 0, first = true, cur = null, curVT = null;
+function apply(target){
+  stopPlay(); if (toc.open) toc.close();
+  if (target && target.ev){
+    if (!cur) homeScroll = scrollY;
+    S = null; cur = target.id; active = -1; lock = null;
+    document.documentElement.style.setProperty('--acc', 'var(--ink)');
+    viewHome.hidden = true; viewDetail.hidden = true; viewEvents.hidden = false;
+    document.documentElement.classList.remove('is-detail'); document.documentElement.classList.add('is-events');
+    $('homeNav').hidden = false; $('detailNav').hidden = true; playBtn.hidden = true;
+    document.title = L('Peristiwa', 'Events') + ': Stock Journey';
+    window.scrollTo(0, 0);
+    renderEvents();
+  } else if (target){
+    if (!cur) homeScroll = scrollY;
+    S = target; cur = target.id; mode = 'focus'; $('mFocus').setAttribute('aria-pressed', true); $('mAll').setAttribute('aria-pressed', false);
+    viewHome.hidden = true; viewEvents.hidden = true; viewDetail.hidden = false;
+    document.documentElement.classList.remove('is-events'); document.documentElement.classList.add('is-detail');
+    $('homeNav').hidden = true; $('detailNav').hidden = false; playBtn.hidden = false;
+    renderDetail();
+    document.title = S.name + ': Stock Journey';
+    window.scrollTo(0, 0);
+    if (pendingCh != null){ const k = pendingCh; pendingCh = null; setTimeout(() => goTo(k), REDUCED ? 0 : 450); }
+  } else {
+    S = null; cur = null; active = -1; lock = null;
+    document.documentElement.style.setProperty('--acc', 'var(--ink)');
+    document.documentElement.style.setProperty('--au1', '#f6b48a');
+    document.documentElement.style.setProperty('--au2', '#e8b4dc');
+    viewDetail.hidden = true; viewEvents.hidden = true; viewHome.hidden = false;
+    document.documentElement.classList.remove('is-detail', 'is-events');
+    $('homeNav').hidden = false; $('detailNav').hidden = true; playBtn.hidden = true;
+    document.title = 'Stock Journey';
+    window.scrollTo(0, homeScroll);
+  }
+  onScroll();
+}
+function switchTo(mkt, hash){ store.set('sj-mkt', mkt); history.replaceState(null, '', '#' + hash); fadeReload(mktLabel(mkt)); }
+function show(id, anchor){
+  const im = (window.SJ_IDS || {})[id];
+  if (im && im !== MKT){ switchTo(im, id); return; }
+  const target = id === 'events' ? EVV : byId[id] || null;
+  if (target && !target.ev && !target.full){ document.documentElement.classList.add('is-loading'); loadStock(target).then(() => { document.documentElement.classList.remove('is-loading'); show(id, anchor); }, () => document.documentElement.classList.remove('is-loading', 'sj-boot')); return; }
+  if (target && target.ev && cur === 'events'){ if (pendingEv){ const k = pendingEv; pendingEv = null; selectEvent(k, true); } window.scrollTo({top: 0, behavior: REDUCED ? 'auto' : 'smooth'}); return; }
+  if (target && cur === target.id){ if (pendingCh != null){ const k = pendingCh; pendingCh = null; goTo(k); } return; }
+  if (!target && !cur && !first){ if (anchor) scrollToAnchor(anchor); return; }
+  const wasFirst = first; first = false;
+  if (curVT){ curVT.skipTransition(); curVT = null; }
+  const after = () => { if (anchor) scrollToAnchor(anchor); };
+  if (wasFirst || REDUCED || !document.startViewTransition || document.visibilityState !== 'visible'){
+    apply(target); after();
+    if (wasFirst){ document.documentElement.classList.remove('sj-boot'); restoreScroll(); const rdy = () => document.documentElement.classList.add('sj-ready'); requestAnimationFrame(rdy); setTimeout(rdy, 120); }
+    if (!wasFirst && !REDUCED){ const v = target ? (target.ev ? viewEvents : viewDetail) : viewHome; v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
+    return;
+  }
+  const fromTile = target && !target.ev && document.querySelector(`#viewHome [data-id="${target.id}"] .mono, #moreTiles [data-id="${target.id}"] .mono`);
+  const leavingId = cur;
+  if (fromTile) fromTile.style.viewTransitionName = 'stock-mono';
+  const vt = curVT = document.startViewTransition(() => {
+    if (fromTile) fromTile.style.viewTransitionName = '';
+    apply(target); after();
+    if (!target && leavingId && !anchor){ const t = tilesEl.querySelector(`[data-id="${leavingId}"] .mono`); if (t) t.style.viewTransitionName = 'stock-mono'; }
+  });
+  vt.ready.catch(() => {}); vt.updateCallbackDone.catch(() => {});
+  vt.finished.catch(() => {}).then(() => { if (curVT === vt) curVT = null; document.querySelectorAll('.tile .mono').forEach(t => t.style.viewTransitionName = ''); });
+}
+function scrollToAnchor(a){ const el = $(a); if (el) el.scrollIntoView({behavior: REDUCED || first ? 'auto' : 'smooth', block:'start'}); }
+function route(){
+  let h = location.hash.slice(1).toLowerCase();
+  // old Indonesian links keep working and are rewritten to the English ones
+  const legacy = {beranda: 'home', saham: 'stocks', banding: 'compare', peristiwa: 'events'};
+  if (legacy[h]){ h = legacy[h]; history.replaceState(null, '', '#' + h); }
+  document.querySelectorAll('#homeNav a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + h ? 'true' : 'false'));
+  if (h === 'stocks' || h === 'compare' || h === 'evhome'){ show('', h === 'evhome' ? 'evHome' : h === 'stocks' ? 'saham' : 'banding'); return; }
+  show(h === 'home' ? '' : h);
+}
+addEventListener('hashchange', route);
+route();
+// after a language or market switch, return to where the reader was
+function restoreScroll(){
+  try {
+    const r = JSON.parse(sessionStorage.getItem('sj-restore') || 'null'); sessionStorage.removeItem('sj-restore');
+    if (r && r.h === location.hash){ const go = () => window.scrollTo(0, r.y); requestAnimationFrame(go); setTimeout(go, 150); setTimeout(go, 400); } // layout may still be growing
+  } catch (e) {}
+}
+};
+</script>
+<script>
+// pick market and language before any data loads, so only one small index file is fetched
+(() => {
+  const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const ids = window.SJ_IDS || {}, hashId = () => location.hash.slice(1).toLowerCase();
+  const pickMkt = () => ids[hashId()] || (get('sj-mkt') === 'id' ? 'id' : 'us');
+  const load = src => new Promise((ok, fail) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc); });
+
+  // The app can be torn down and started again in place (language switch without a reload).
+  // Global listeners, observers and intervals created by the app are tracked so they can be removed.
+  let ac = new AbortController(), observers = [], intervals = [];
+  const withSig = o => o && typeof o === 'object' ? {...o, signal: ac.signal} : {capture: !!o, signal: ac.signal};
+  for (const T of [window, document]){ const add = T.addEventListener; T.addEventListener = function(t, f, o){ return add.call(this, t, f, withSig(o)); }; }
+  const mqAdd = MediaQueryList.prototype.addEventListener;
+  MediaQueryList.prototype.addEventListener = function(t, f, o){ return mqAdd.call(this, t, f, withSig(o)); };
+  for (const k of ['ResizeObserver', 'IntersectionObserver']){ const O = window[k]; if (O) window[k] = class extends O { constructor(...a){ super(...a); observers.push(this); } }; }
+  const si = window.setInterval; window.setInterval = (...a) => { const id = si(...a); intervals.push(id); return id; };
+  const pristine = [...document.body.childNodes].filter(n => n.nodeName !== 'SCRIPT').map(n => n.cloneNode(true));
+  const pristineCls = document.documentElement.className;
+
+  window.__sjSwapLang = async (lang, opt = {}) => {
+    try { localStorage.setItem('sj-lang', lang); } catch (e) {}
+    const mkt = pickMkt(), h = hashId(), y = scrollY;
+    window.SJ_STOCK = {};
+    try {
+      await Promise.all([load(`d/${mkt}-${lang}.js`), ids[h] ? load(`d/s/${h}-${lang}.js`).catch(() => {}) : null]);
+    } catch (e) { location.reload(); return; }
+    const root = document.documentElement;
+    root.classList.add('sj-quiet');
+    ac.abort(); observers.forEach(o => o.disconnect()); intervals.forEach(clearInterval);
+    ac = new AbortController(); observers = []; intervals = [];
+    // open dialogs are simply removed with the old DOM: closing them would run the old close handlers against the new DOM
+    const first = [...document.body.childNodes].find(n => n.nodeName === 'SCRIPT');
+    [...document.body.childNodes].filter(n => n.nodeName !== 'SCRIPT').forEach(n => n.remove());
+    pristine.forEach(n => document.body.insertBefore(n.cloneNode(true), first));
+    const keep = ['sj-ready', 'sj-in'].filter(c => root.classList.contains(c));
+    root.className = pristineCls; root.classList.add('sj-quiet', ...keep);
+    if (ids[h]) root.classList.add('sj-boot');
+    try { sessionStorage.setItem('sj-restore', JSON.stringify({h: location.hash, y})); } catch (e) {}
+    window.__sjQuiet = true;
+    window.__sjStart();
+    window.__sjQuiet = false;
+    if (opt.menu){ const m = document.getElementById('mMenu'); document.getElementById('menuBtn').click(); m.querySelector(`[data-lang="${lang}"]`)?.focus(); }
+    else document.getElementById('langBtn')?.focus({preventScroll: true});
+    setTimeout(() => root.classList.remove('sj-quiet'), 450);
+  };
+
+  const h = hashId(), lang = get('sj-lang') === 'en' ? 'en' : 'id';
+  load(`d/${pickMkt()}-${lang}.js`).then(() => window.__sjStart());
+  // opening a stock directly (link, reload): fetch its detail in parallel and keep the home view hidden until it renders
+  if (ids[h]){
+    document.documentElement.classList.add('sj-boot');
+    load(`d/s/${h}-${lang}.js`).catch(() => {});
+  }
+})();
+</script>

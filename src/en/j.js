@@ -1,0 +1,38 @@
+// English translations of the Indonesian market events.
+module.exports = {
+events_id: {
+ id2011: {title: "The 2011 global debt crisis", short: "2011 crisis",
+  body: "In August 2011, the United States' credit rating was cut and the eurozone debt crisis worsened. Foreign money left emerging markets, and on 22 September the JCI fell almost 9% in a day.",
+  lesson: "CIMB Niaga (−40%), Vale Indonesia (−39%), and PGN (−37%) were hit hardest. Telkom and Unilever Indonesia barely fell."},
+ taper: {title: "The taper tantrum", short: "2013 taper",
+  body: "In May 2013, the Fed signaled it would scale back its stimulus. Foreign money rushed out, the rupiah weakened past Rp11,000 per dollar, and Bank Indonesia raised interest rates. The JCI only returned to its starting level in September 2014.",
+  lesson: "Retail stocks fell the most: Erajaya −69% and Mitra Adiperkasa −53%, followed by Charoen Pokphand −49%. Unilever Indonesia fell only 12%, and Barito Pacific actually rose 4%."},
+ jokowi: {title: "The Jokowi effect", short: "2014 Jokowi effect",
+  body: "On 14 March 2014, the PDI-P party named Joko Widodo as its presidential candidate, and the JCI rose 3.2% that day. Jokowi went on to win and was declared the election winner on 22 July 2014. Investors hoped for reform and infrastructure building.",
+  lesson: "Vale Indonesia rose 46%, followed by BRI, Kalbe Farma, and XL at +22%, far above the JCI. By contrast, Mitra Adiperkasa fell 25% and Japfa 24%."},
+ rp2015: {title: "The weakest rupiah since 1998", short: "2015 rupiah",
+  body: "Commodity prices fell, the economy slowed, and China devalued the yuan in August 2015. The rupiah weakened to its lowest level since the 1998 crisis, and the JCI fell by a quarter. The index only returned to its starting level in March 2017.",
+  lesson: "Chandra Asri actually rose 21% because its feedstock got cheaper when oil fell. Japfa fell 60% and Barito Pacific 55%, while Telkom and Unilever Indonesia fell only 9%."},
+ amnesty: {title: "The tax amnesty", short: "2016 tax amnesty",
+  body: "On 28 June 2016, parliament passed the tax amnesty law. Individuals and companies declared assets they had long hidden, and some of the money came home to Indonesia. The first period ended on 30 September with results above expectations.",
+  lesson: "Chandra Asri soared 212% and its parent, Barito Pacific, 99% in three months. Astra, Mandiri, and BCA rose about 23–25%, more than the JCI."},
+ rp2018: {title: "A pressured rupiah and rising rates", short: "2018 rupiah",
+  body: "Rising US interest rates pulled money out of emerging markets, and the rupiah weakened past Rp14,000 per dollar. From May 2018, Bank Indonesia raised rates several times to support the rupiah. The JCI only returned to its starting level in November 2021.",
+  lesson: "Indosat fell the most (−44%). Some stocks actually soared: Erajaya +165% and Indah Kiat, an exporter helped by the weak rupiah, +86%. Unilever Indonesia never returned to its pre-event level."},
+ idcovid: {title: "The COVID-19 pandemic", short: "2020 pandemic",
+  body: "The pandemic spread around the world, and Indonesia announced its first cases on 2 March 2020. Foreign money left and the rupiah briefly weakened past Rp16,000. The JCI lost more than a third of its value and only returned to its starting level in January 2021.",
+  lesson: "PGN (−71%), Barito Pacific (−63%), and Indah Kiat (−62%) were hit hardest. Consumer stocks held up better: Alfamart and Indofood CBP fell about 27–28%."},
+ commodity: {title: "The commodity price boom", short: "2022 commodities",
+  body: "Prices of coal, palm oil, and nickel soared, especially after Russia invaded Ukraine. Indonesia, a commodity exporter, benefited, its trade surplus was large, and the JCI set a record above 7,200 in April 2022.",
+  lesson: "Vale Indonesia (+67%) and Bayan (+65%) rose the most. Bukalapak fell 45%, and consumer stocks were squeezed by raw material costs: Mayora fell 33% and Unilever Indonesia 23%."},
+ outflow: {title: "Foreign money flees and a trading halt", short: "2025 outflows",
+  body: "After the JCI set a record in September 2024, foreign investors kept selling amid worries about the state budget and the rupiah. Danantara was launched in February 2025. On 18 March 2025, the JCI briefly plunged more than 5% at midday and trading was halted.",
+  lesson: "DCI Indonesia actually rose 113%, and GoTo rose 32% on rumors of a merger with Grab. Barito Renewables fell 54% and Bank Jago 51%."},
+ lebaran: {title: "US tariffs after the Eid holiday", short: "2025 tariffs",
+  body: "While the Indonesian exchange was closed for the Eid holiday, the United States announced sweeping import tariffs on 2 April. When trading reopened on 8 April, the JCI plunged so fast that trading was halted, and it closed down 7.9%. The index recovered in just two weeks.",
+  lesson: "Petrindo (−27%) and Barito Renewables (−23%) fell the most. Telkom fell only 4%, and Alfamart actually rose 1%."},
+ rally8000: {title: "The JCI breaks 8,000", short: "2025 rally",
+  body: "Bank Indonesia cut interest rates several times, and the government placed Rp200 trillion in state-owned banks in September 2025. Conglomerate stocks soared, and the JCI set record after record, reaching above 8,700 in December 2025.",
+  lesson: "The rise was driven by conglomerate stocks: Barito Pacific rose 467% and Petrindo 459%. The big banks barely joined in: BCA +5% and BRI +1%, while Indofood CBP fell 16%."}
+}
+};

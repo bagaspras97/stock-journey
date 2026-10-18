@@ -1,0 +1,8 @@
+# Raw Yahoo Finance downloads (large, third-party data); rebuild them locally
+raw/px/
+raw/tools/*.json
+# Build outputs
+netlify-site/
+stock-journey-netlify.zip
+data.js
+.DS_Store
