@@ -2,7 +2,7 @@
 module.exports = [
  {id:'2011', start:'2011-07-22', end:'2011-10-03', kind:'down', title:'Peringkat utang AS turun & krisis Eropa', short:'Krisis utang 2011',
   body:'Agustus 2011, S&P menurunkan peringkat utang Amerika Serikat untuk pertama kalinya dalam sejarah, sementara krisis utang zona euro memburuk. Investor lari ke aset aman dan saham bank paling terpukul.',
-  lesson:'Saham bank paling terpukul: Bank of America −45% dan JPMorgan −32%. Netflix jatuh lebih parah (−59%) karena blunder Qwikster-nya sendiri. Costco, Mastercard, dan Amazon nyaris tidak turun.'},
+  lesson:'Saham bank paling terpukul: Morgan Stanley −48%, Bank of America −45%, dan JPMorgan −32%. Netflix jatuh lebih parah (−59%) karena blunder Qwikster-nya sendiri. Costco, Mastercard, dan Amazon nyaris tidak turun.'},
  {id:'2015', start:'2015-07-20', end:'2015-08-25', kind:'down', title:'Devaluasi yuan dan kepanikan Agustus', short:'Kepanikan 2015',
   body:'China mendevaluasi yuan secara mendadak pada Agustus 2015, memicu kekhawatiran perlambatan ekonomi global. Pada 24 Agustus, pasar saham AS sempat anjlok tajam di menit-menit awal perdagangan.',
   lesson:'Guncangan dari luar negeri menyeret hampir semua saham sekaligus. Sebagian besar pulih dalam hitungan minggu, tetapi S&P 500 baru kembali ke level awal pada Juli 2016.'},

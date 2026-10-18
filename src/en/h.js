@@ -211,7 +211,7 @@ bmri: {
 events: {
  '2011': {title: "US credit downgrade and the European crisis", short: "2011 debt crisis",
   body: "In August 2011, S&P downgraded the United States' credit rating for the first time in history, while the eurozone debt crisis worsened. Investors fled to safe assets and bank stocks were hit hardest.",
-  lesson: "Bank stocks were hit hardest: Bank of America −45% and JPMorgan −32%. Netflix fell even more (−59%) because of its own Qwikster blunder. Costco, Mastercard, and Amazon barely fell."},
+  lesson: "Bank stocks were hit hardest: Morgan Stanley −48%, Bank of America −45%, and JPMorgan −32%. Netflix fell even more (−59%) because of its own Qwikster blunder. Costco, Mastercard, and Amazon barely fell."},
  '2015': {title: "The yuan devaluation and the August panic", short: "2015 panic",
   body: "China abruptly devalued the yuan in August 2015, sparking fears of a global slowdown. On 24 August, the US stock market plunged in the first minutes of trading.",
   lesson: "A shock from abroad dragged down almost every stock at once. Most recovered within weeks, but the S&P 500 only returned to its starting level in July 2016."},

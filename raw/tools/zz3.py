@@ -1,6 +1,6 @@
 import json,datetime as dt,sys
 exec(open('zz2.py').read().split("if __name__")[0])
-BAD={'TOWR':['2018-05-02','2018-05-04'],'MAPI':['2018-05-02','2018-05-04','2018-05-14']}; START={'ARTO':'2019-01-02','MYOR':'2013-10-22','ANTM':'2012-09-24','AMRT':'2014-01-02','TOWR':'2014-01-02','BNGA':'2011-01-03'}
+BAD={'TOWR':['2018-05-02','2018-05-04'],'MAPI':['2018-05-02','2018-05-04','2018-05-14'],'FILM':['2025-06-30','2025-07-01','2025-07-02','2025-07-03','2025-07-04']}; START={'ARTO':'2019-01-02','MYOR':'2013-10-22','ANTM':'2012-09-24','AMRT':'2014-01-02','TOWR':'2014-01-02','BNGA':'2011-01-03','BSDE':'2011-01-03'}
 def LV(f):
     r=json.load(open(f))['chart']['result'][0]; q=r['indicators']['quote'][0]
     return [(dt.datetime.utcfromtimestamp(t).date().isoformat(),q['close'][i],q['volume'][i]) for i,t in enumerate(r['timestamp'])]

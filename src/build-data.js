@@ -8,7 +8,7 @@ global.window = {};
 const oldSrc = fs.readFileSync(path.join(__dirname, 'stories-old.js'), 'utf8');
 eval(oldSrc);
 const OLD = window.STOCKS;
-const NEW = require('./stories-new.js'), MORE = require('./stories-more.js'), IDN = require('./stories-id.js'), IDN2 = require('./stories-id2.js'), IDN3 = require('./stories-id3.js'), US4 = require('./stories-us4.js'), IDN4 = require('./stories-id4.js');
+const NEW = require('./stories-new.js'), MORE = require('./stories-more.js'), IDN = require('./stories-id.js'), IDN2 = require('./stories-id2.js'), IDN3 = require('./stories-id3.js'), US4 = require('./stories-us4.js'), IDN4 = require('./stories-id4.js'), US5 = require('./stories-us5.js'), IDN5 = require('./stories-id5.js');
 const file = tk => tk.replace(/\W/g, '');
 
 // corrections found while checking the original stories against daily data
@@ -62,14 +62,16 @@ const IDX_DAYS = (() => {
   const r = JSON.parse(fs.readFileSync(path.join(PX, 't_JKSE.json'))).chart.result[0];
   return new Set(r.timestamp.map((t, i) => r.indicators.quote[0].close[i] != null ? new Date(t*1000).toISOString().slice(0, 10) : null).filter(Boolean));
 })();
-const IDX_BAD = {'TLKM.JK': ['2011-03-23'], 'TOWR.JK': ['2018-05-02', '2018-05-04'], 'MAPI.JK': ['2018-05-02', '2018-05-04', '2018-05-14']};
+const IDX_BAD = {'TLKM.JK': ['2011-03-23'], 'TOWR.JK': ['2018-05-02', '2018-05-04'], 'MAPI.JK': ['2018-05-02', '2018-05-04', '2018-05-14'],
+  // MD Entertainment: five rows scaled by an unexplained adjustment just before 7 July 2025
+  'FILM.JK': ['2025-06-30', '2025-07-01', '2025-07-02', '2025-07-03', '2025-07-04']};
 // BNI: a December 2010 rights-issue adjustment could not be verified, so its series starts in 2011.
 // Chandra Asri: the ticker belonged to Tri Polyta until the merger completed at the start of 2011.
 // Bank Jago: before 2019 a thinly traded small bank with erratic prints. Mayora: a 2013 bonus-share adjustment that does not reconcile.
 // Aneka Tambang: Yahoo has no trades from May 2010 to September 2012. Alfamart and Sarana Menara: before 2014 most rows repeat the previous day.
 const IDX_START = {'BBNI.JK': '2011-01-03', 'TPIA.JK': '2011-01-03', 'ARTO.JK': '2019-01-02', 'MYOR.JK': '2013-10-22',
   'ANTM.JK': '2012-09-24', 'AMRT.JK': '2014-01-02', 'TOWR.JK': '2014-01-02',
-  'BNGA.JK': '2011-01-03'}; // CIMB Niaga: a December 2010 adjustment that could not be verified
+  'BNGA.JK': '2011-01-03', 'BSDE.JK': '2011-01-03'}; // CIMB Niaga and Bumi Serpong Damai: late-2010 adjustments that could not be verified
 // BBRI rights issue (ex-date 8 Sep 2021): Yahoo scales earlier prices by 0.909072. The theoretical ex-rights
 // factor from the offer (0.22873 new shares per share at Rp3,400, cum price Rp3,910) is 0.97571.
 const IDX_REFACTOR = {'BBRI.JK': [{before: '2021-09-08', mult: 0.97571 / 0.909072}]};
@@ -149,7 +151,7 @@ function build(S0){
   return S;
 }
 
-const ORDER = ['nvda','aapl','msft','avgo','amd','intc','orcl','pltr','googl','meta','nflx','amzn','tsla','wmt','cost','hd','ko','pg','mcd','brkb','jpm','bac','v','ma','lly','unh','jnj','pfe','xom','cvx','ba','cat','unp','csco','crm','adbe','qcom','ibm','abbv','mrk','pep','nke','dis','wfc','gs','bbca','bbri','bmri','bbni','tlkm','asii','icbp','unvr','tpia','bren','ammn','goto','byan','dcii','amrt','brpt','cuan','untr','klbf','isat','cpin','indf','ggrm','myor','antm','inco','ptba','arto','towr','buka','pgas','itmg','akra','jsmr','excl','sido','inkp','intp','bnga','jpfa','mapi','mika','bdmn','eraa','pnbn'];
+const ORDER = ['nvda','aapl','msft','avgo','amd','intc','orcl','pltr','googl','meta','nflx','amzn','tsla','wmt','cost','hd','ko','pg','mcd','brkb','jpm','bac','v','ma','lly','unh','jnj','pfe','xom','cvx','ba','cat','unp','csco','crm','adbe','qcom','ibm','abbv','mrk','pep','nke','dis','wfc','gs','ms','axp','pm','tmo','amat','isrg','now','intu','amgn','uber','bbca','bbri','bmri','bbni','tlkm','asii','icbp','unvr','tpia','bren','ammn','goto','byan','dcii','amrt','brpt','cuan','untr','klbf','isat','cpin','indf','ggrm','myor','antm','inco','ptba','arto','towr','buka','pgas','itmg','akra','jsmr','excl','sido','inkp','intp','bnga','jpfa','mapi','mika','bdmn','eraa','pnbn','film','nckl','admr','mbma','tbig','mtel','pgeo','cmry','avia','bsde'];
 
 // USD/IDR (Yahoo "IDR=X"): drop feed glitches with a rolling median, keep weekly closes plus month starts
 function loadFx(){
@@ -198,7 +200,7 @@ const spx = loadAdj('t_GSPC.json'), sptr = loadAdj('t_SP500TR.json'), jkse = loa
 const MARKET = {spx: monthly(spx.days, spx.close), sptr: monthly(sptr.days, sptr.adj), jkse: monthly(jkse.days, jkse.close)};
 const LOGO = fs.existsSync(path.join(__dirname, 'extra/logos.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'extra/logos.json'))).icons : {};
 
-const all = [...OLD, ...NEW, ...MORE, ...US4, ...IDN, ...IDN2, ...IDN3, ...IDN4].map(build).map(S => Object.assign(S, extras(S), LOGO[S.tk] ? {logo: LOGO[S.tk].path} : {}));
+const all = [...OLD, ...NEW, ...MORE, ...US4, ...US5, ...IDN, ...IDN2, ...IDN3, ...IDN4, ...IDN5].map(build).map(S => Object.assign(S, extras(S), LOGO[S.tk] ? {logo: LOGO[S.tk].path} : {}));
 all.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 const EVENTS = EVENTS_SRC.map(ev => {
   const rows = {};

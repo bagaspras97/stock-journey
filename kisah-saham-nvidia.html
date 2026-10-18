@@ -1006,7 +1006,7 @@ const rpx = v => 'Rp' + Math.round(v).toLocaleString(LOC);
 const px = (S, v) => isID(S) ? rpx(v) : usd(v);
 const pxShort = (S, v) => isID(S) ? rpx(v) : usdShort(v);
 const mkName = S => isID(S) ? L('IHSG', 'JCI') : 'S&P 500';
-const GL = {'Teknologi':'Technology','Komunikasi & media':'Communication & media','Konsumen':'Consumer','Keuangan':'Financials','Kesehatan':'Health care','Energi':'Energy','Bahan baku':'Materials','Industri':'Industrials'};
+const GL = {'Teknologi':'Technology','Komunikasi & media':'Communication & media','Konsumen':'Consumer','Keuangan':'Financials','Kesehatan':'Health care','Energi':'Energy','Bahan baku':'Materials','Industri':'Industrials','Properti':'Real estate'};
 const gname = g => EN ? GL[g] || g : g;
 const pct = p => (p >= 0 ? '+' : '−') + Math.abs(Math.round(p)).toLocaleString(LOC) + '%';
 const mult = m => (m >= 10 ? Math.round(m).toLocaleString(LOC) : num(m, 1)) + '×';
@@ -1398,11 +1398,11 @@ const tilesEl = $('tiles');
 tilesEl.innerHTML = STOCKS.map(S => tileHTML(S)).join('') + `<div class="empty" id="empty" hidden><p>${L('Tidak ada saham yang cocok dengan pencarian dan filter ini.', 'No stocks match this search and these filters.')}</p><button type="button" class="btn" id="emptyReset">${L('Hapus semua filter', 'Clear all filters')}</button></div>`;
 
 // filters
-const GROUPS = ['Teknologi','Komunikasi & media','Konsumen','Keuangan','Kesehatan','Energi','Bahan baku','Industri'];
+const GROUPS = ['Teknologi','Komunikasi & media','Konsumen','Keuangan','Kesehatan','Energi','Bahan baku','Industri','Properti'];
 const GROWTH = [{id:'all', label:L('Semua', 'All')}, {id:'big', label:L('Di atas 10×', 'Over 10×')}, {id:'mid', label:'2–10×'}, {id:'low', label:L('Di bawah 2×', 'Under 2×')}];
 const F = {q:'', group:'all', growth:'all', sort:'mult'};
 const SORTS = {mult:(a,b) => b.mult-a.mult, worst:(a,b) => a.worst-b.worst, name:(a,b) => a.name.localeCompare(b.name)};
-$('fGroup').innerHTML = [['all',L('Semua sektor', 'All sectors'),STOCKS.length], ...GROUPS.map(g => [g, gname(g), STOCKS.filter(S => S.group === g).length])]
+$('fGroup').innerHTML = [['all',L('Semua sektor', 'All sectors'),STOCKS.length], ...GROUPS.map(g => [g, gname(g), STOCKS.filter(S => S.group === g).length]).filter(x => x[2])]
   .filter(([,,n]) => n).map(([v,l,n]) => `<button type="button" class="pill" data-v="${esc(v)}" aria-pressed="${v === 'all'}">${esc(l)} <span class="n">${n}</span></button>`).join('');
 $('fGrowth').innerHTML = GROWTH.map(g => `<button type="button" data-v="${g.id}" aria-pressed="${g.id === 'all'}">${g.label}</button>`).join('');
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
